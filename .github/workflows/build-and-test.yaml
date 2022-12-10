@@ -1,0 +1,111 @@
+name: Build and test
+on: push
+jobs:
+  build-linux:
+    name: Build ${{ matrix.os }} ${{ matrix.build_type }} with ${{ matrix.preset }}
+    strategy:
+      matrix:
+        os: [ubuntu-22.04]
+        build_type: [Debug, Release]
+        preset: [gcc-12, clang-14]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+      - name: Restore cache
+        uses: actions/cache@v3
+        id: vcpkg-cache-linux
+        with:
+          path: ~/.cache/vcpkg
+          key: ${{ matrix.os }}-${{ matrix.build_type }}-${{ matrix.preset }}-${{ hashFiles('**/vcpkg.json', '**/CMakePresets.json') }}
+      - name: Install system dependencies
+        run: |
+          sudo apt update || exit $?
+          sudo apt -y install ninja-build || exit $?
+      - name: Configure
+        run: |
+          cmake -S . -B cmake-build --preset ${{ matrix.preset }} \
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+          -DCMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake || exit $?
+      - name: Build
+        run: |
+          cmake --build cmake-build  --parallel --config ${{ matrix.build_type }} || exit $?
+      - name: Test
+        run: |
+          cd cmake-build || exit $?
+          ctest . || exit $?
+  build-mac:
+    name: Build ${{ matrix.os }} ${{ matrix.build_type }} with ${{ matrix.preset }}
+    strategy:
+      matrix:
+        os: [macos-12]
+        build_type: [Debug, Release]
+        preset: [system-clang]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+      - name: Restore cache
+        uses: actions/cache@v3
+        id: vcpkg-cache-macos
+        with:
+          path: ~/.cache/vcpkg
+          key: ${{ matrix.os }}-${{ matrix.build_type }}-${{ matrix.preset }}-${{ hashFiles('**/vcpkg.json', '**/CMakePresets.json') }}
+      - name: Install system dependencies
+        run: |
+          brew install ninja || exit $?
+          brew install gcc@12 || exit $?
+      - name: Configure
+        run: |
+          cmake -S . -B cmake-build --preset ${{ matrix.preset }} \
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+          -DCMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake || exit $?
+      - name: Build
+        run: |
+          cmake --build cmake-build  --parallel --config ${{ matrix.build_type }} || exit $?
+      - name: Test
+        run: |
+          cd cmake-build || exit $?
+          ctest . || exit $?
+  build-windows:
+    name: Build ${{ matrix.os }} ${{ matrix.build_type }} with ${{ matrix.preset }}
+    strategy:
+      matrix:
+        os: [windows-2022]
+        build_type: [Debug, Release]
+        preset: [msvc-system]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Save vcpkg env vars
+        shell: powershell
+        run: |
+          "vcpkg_root=$env:VCPKG_INSTALLATION_ROOT" >> $env:GITHUB_ENV
+          "vcpkg_cache=$env:LOCALAPPDATA\vcpkg\" >> $env:GITHUB_ENV
+      - name: Check out code
+        uses: actions/checkout@v3
+      - name: Restore cache
+        uses: actions/cache@v3
+        id: vcpkg-cache-windows
+        with:
+          path: ${{ env.vcpkg_cache }}
+          key: ${{ matrix.os }}-${{ matrix.build_type }}-${{ matrix.preset }}-${{ hashFiles('**/vcpkg.json', '**/CMakePresets.json') }}
+      - name: Install system dependencies
+        shell: powershell
+        run: choco install ninja -y
+      - name: Configure
+        shell: powershell
+        run: |
+          & 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\Launch-VsDevShell.ps1'
+          cmake -S . -B cmake-build --preset ${{ matrix.preset }} `
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} `
+          -DCMAKE_TOOLCHAIN_FILE=${{ env.vcpkg_root }}\scripts\buildsystems\vcpkg.cmake
+      - name: Build
+        shell: powershell
+        run: |
+          & 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\Launch-VsDevShell.ps1'
+          cmake --build cmake-build --parallel --config ${{ matrix.build_type }}
+      - name: Test
+        shell: powershell
+        run: |
+          cd cmake-build
+          ctest .

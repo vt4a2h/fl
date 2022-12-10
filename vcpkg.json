@@ -1,0 +1,10 @@
+{
+    "name": "fl",
+    "version-string": "0.1",
+    "dependencies": [
+        "catch2",
+        "fmt",
+        "spdlog",
+        "range-v3"
+    ]
+}
