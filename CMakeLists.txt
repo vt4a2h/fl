@@ -20,6 +20,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 endif()
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/vcpkg.json)
 
 if(BUILD_TESTING)
     enable_testing()
