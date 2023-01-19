@@ -33,10 +33,9 @@ concept IsProbablySemigroup = requires(S s, V v) {
 
 template <class W>
 concept IsProbablyWriter = requires {
-    typename W::LogType;
-    typename W::ValueType;
-
-    // TODO: extend
+    typename std::remove_cvref_t<W>::LogType;
+    typename std::remove_cvref_t<W>::ValueType;
+    typename std::remove_cvref_t<W>::writer_tag_;
 };
 
 template<class F, class Arg>
