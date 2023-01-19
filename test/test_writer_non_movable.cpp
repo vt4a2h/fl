@@ -12,38 +12,13 @@
 
 #include <string>
 
-#include <fl/semigroups/semigroup.hpp>
 #include <fl/writer.hpp>
 
-class NonMovableString : public std::string {
-public:
-    NonMovableString() = default;
-    explicit NonMovableString(const std::string& s) : std::string(s) {}
-    NonMovableString(const NonMovableString&) = default;
-    NonMovableString &operator=(const NonMovableString&) = default;
-
-    explicit NonMovableString(NonMovableString &&) = delete;
-    NonMovableString &operator=(NonMovableString &&) = delete;
-};
-
-namespace fl {
-
-template<>
-struct Semigroup<NonMovableString> {
-    [[nodiscard]]
-    NonMovableString combine(const NonMovableString& v1, const NonMovableString& v2) const {
-        NonMovableString result;
-
-        result.reserve(v1.size() + v2.size() + 1);
-        result.append(v1).append("-").append(v2);
-
-        return result;
-    }
-};
-
-}
+#include "writer_utility_types.hpp"
 
 TEST_CASE("Writer with non-movable log type") {
+    using namespace writer_tests_util;
+
     using Value = std::uint64_t;
     using Log = NonMovableString;
     using Logger = fl::Writer<Log, Value>;

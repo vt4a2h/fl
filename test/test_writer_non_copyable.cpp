@@ -12,37 +12,13 @@
 
 #include <string>
 
-#include <fl/semigroups/semigroup.hpp>
 #include <fl/writer.hpp>
 
-class NonCopyableString : public std::string {
-public:
-    NonCopyableString() = default;
-    explicit NonCopyableString(const std::string& s) : std::string(s) {}
-
-    NonCopyableString(NonCopyableString &&) noexcept = default;
-    NonCopyableString &operator=(NonCopyableString &&) noexcept = default;
-
-    explicit NonCopyableString(const NonCopyableString&) = delete;
-    NonCopyableString &operator=(const NonCopyableString&) = delete;
-};
-
-namespace fl {
-
-template<>
-struct Semigroup<NonCopyableString> {
-    [[nodiscard]]
-    NonCopyableString combine(NonCopyableString&& v1, NonCopyableString&& v2) const {
-        v1.reserve(v1.size() + v2.size() + 1);
-        v1.append("-").append(v2);
-
-        return v1;
-    }
-};
-
-}
+#include "writer_utility_types.hpp"
 
 TEST_CASE("Writer with non-copyable log type") {
+    using namespace writer_tests_util;
+
     using Value = std::uint64_t;
     using Log = NonCopyableString;
     using Logger = fl::Writer<Log, Value>;
