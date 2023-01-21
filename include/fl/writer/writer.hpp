@@ -13,11 +13,11 @@
 #include <functional>
 #include <concepts>
 
-#include <fl/semigroups/semigroup.hpp>
-#include <fl/monoids/monoid.hpp>
-#include <fl/concepts/concepts.hpp>
-#include <fl/util/any_semigroup.hpp>
-#include <fl/util/move_if_possible.hpp>
+#include "fl/semigroups/semigroup.hpp"
+#include "fl/monoids/monoid.hpp"
+#include "fl/concepts/concepts.hpp"
+#include "fl/util/any_semigroup.hpp"
+#include "fl/util/move_if_possible.hpp"
 
 namespace fl {
 

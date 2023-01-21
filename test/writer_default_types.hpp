@@ -13,7 +13,7 @@
 #include <vector>
 #include <string>
 
-#include <fl/writer.hpp>
+#include "fl/writer/writer.hpp"
 #include <fl/semigroups/semigroup_std_container.hpp>
 
 using Log = std::vector<std::string>;

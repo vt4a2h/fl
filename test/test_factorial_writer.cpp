@@ -10,7 +10,7 @@
 //
 #include <fmt/format.h>
 
-#include <fl/writer.hpp>
+#include "fl/writer/writer.hpp"
 #include <fl/semigroups/all.hpp>
 
 #include <ranges>
