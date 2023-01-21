@@ -2,10 +2,9 @@ find_package(Catch2 CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
 
-set(HEADER_LIST
-    writer_default_types.hpp
-)
-set(SOURCE_LIST
+add_executable(tests)
+
+target_sources(tests PRIVATE
     test_writer_create.cpp
     test_writer_transform.cpp
     test_writer_and_then.cpp
@@ -22,12 +21,7 @@ set(SOURCE_LIST
     test_writer_non_copyable.cpp
     test_move_if_possible.cpp
     test_lazy_syntax.cpp
-)
-
-add_executable(tests
-    main.cpp
-    ${HEADER_LIST}
-    ${SOURCE_LIST}
+    writer_default_types.hpp
 )
 
 target_compile_features(tests PRIVATE cxx_std_23)
@@ -36,6 +30,7 @@ target_link_libraries(tests PRIVATE
     Catch2::Catch2
     Catch2::Catch2WithMain
     fmt::fmt
+    fl
 )
 
 include(Catch)
