@@ -21,6 +21,7 @@ set(SOURCE_LIST
     test_writer_non_movable.cpp
     test_writer_non_copyable.cpp
     test_move_if_possible.cpp
+    test_lazy_syntax.cpp
 )
 
 add_executable(tests
