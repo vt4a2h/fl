@@ -43,6 +43,27 @@ template <class... Args>
 concept MoveConstructable = (std::is_move_constructible_v<Args> && ...);
 }
 
+/*!
+ * Writer "monad".
+ *
+ * This abstraction can be used for logging without side effects. It's also possible to compose functions that return
+ * Writer<Log, Value>. For example:
+ * \code{.cpp}
+ *    using Log = std::vector<std::string>;
+ *    using Value = std::uint64_t;
+ *    using Logger = fl::Writer<Log, Value>;
+ *
+ *    [[nodiscard]]
+ *    Logger factorial(Val i) {
+ *        const auto mult = [&](Val v) { return v * i; };
+ *        const auto tell = [&](Val ans) { return Logger{{fmt::format("Factorial of {} is {}", i, ans)}, ans}; };
+ *        return (i == 0 ? Logger{{}, 1} : factorial(i - 1).transform(mult)).and_then(tell);
+ *    }
+ * \endcode
+ *
+ * @tparam Log the type of log.
+ * @tparam Value the type of value.
+ */
 template<class Log, class Value>
 struct Writer {
     using LogType = std::remove_cvref_t<Log>;
@@ -70,6 +91,12 @@ struct Writer {
         requires _concepts::MoveConstructable<ValueType>
             : _log(l), _value(std::move(v)) {}
 
+    /*!
+     * Transform the existing value of writer.
+     *
+     * @param f function to transform the value.
+     * @return a copy of the object with the same log, but transformed value.
+     */
     constexpr auto transform(concepts::Invocable<ValueType> auto f) const & {
         return _details::make_writer(_log, std::invoke(f, _value));
     }
@@ -82,6 +109,15 @@ struct Writer {
         return _details::make_writer(fl::util::move_if_possible(_log), std::invoke(f, fl::util::move_if_possible(_value)));
     }
 
+    /*!
+     * Add a log entry.
+     *
+     * The class \p Semigroup is used for combining the existing log with the new one. This class must exist for
+     * \p LogType.
+     *
+     * @param l a log entry to add.
+     * @return a copy of the object with the same value and combined logs.
+     */
     constexpr auto tell(LogType &&l) const &
     requires _concepts::WithSemigroup<LogType> {
         return _details::make_writer(Semigroup<LogType>{}.combine(_log, fl::util::move_if_possible(l)), _value);
@@ -146,6 +182,11 @@ struct Writer {
                                      fl::util::move_if_possible(_value));
     }
 
+    /*!
+     * Change places of value and log.
+     *
+     * @return a new writer object of the type Writer<Value, Log>.
+     */
     constexpr auto swap() const & {
         return _details::make_writer(_value, _log);
     }
@@ -158,6 +199,10 @@ struct Writer {
         return _details::make_writer(fl::util::move_if_possible(_value), fl::util::move_if_possible(_log));
     }
 
+    /*!
+     * Get value.
+     * @return a copy of the value object.
+     */
     constexpr auto value() const & {
         return _value;
     }
@@ -170,6 +215,10 @@ struct Writer {
         return fl::util::move_if_possible(_value);
     }
 
+    /*!
+     * Get log.
+     * @return a copy of the log object.
+     */
     constexpr auto log() const & {
         return _log;
     }
@@ -182,6 +231,10 @@ struct Writer {
         return fl::util::move_if_possible(_log);
     }
 
+    /*!
+     * Tuple of log and value objects.
+     * @return a tuple of copies of log and value objects.
+     */
     constexpr auto as_tuple() const & {
         return std::make_tuple(_log, _value);
     }
@@ -194,11 +247,23 @@ struct Writer {
         return std::make_tuple(fl::util::move_if_possible(_log), fl::util::move_if_possible(_value));
     }
 
+    /*!
+     * Drop existing logs.
+     *
+     * The class \p Monoid must exist for the \p LogType.
+     *
+     * @return a new object with empty log and the same value.
+     */
     constexpr auto reset() const
     requires _concepts::WithMonoid<LogType> {
         return _details::make_writer(Monoid<LogType>().identity(), _value);
     }
 
+    /*!
+     * Compose this writer with the function \p f.
+     * @param f function that accepts Writer object of this type. The function must also return a writer.
+     * @return a new writer object.
+     */
     constexpr auto and_then(concepts::InvocableAndReturnsWriter<ValueType> auto f) const &
     requires _concepts::WithSemigroup<LogType> {
         auto &&w = std::invoke(f, _value);
@@ -226,6 +291,15 @@ struct Writer {
         );
     }
 
+    /*!
+     * Compose this writer with another writer.
+     *
+     * The writer \w must have an invokable value type. The value will be composed with this writer's value.
+     * The class Semigroup must be available for the \p LogType.
+     *
+     * @param w another writer to compose.
+     * @return a new writer contains combined logs and composed values.
+     */
     template<class FunctionLikeValue>
     constexpr auto apply(const Writer<LogType, FunctionLikeValue> &w) const &
     requires _concepts::WithSemigroup<LogType> {
