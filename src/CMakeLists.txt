@@ -10,3 +10,5 @@ if(NOT MSVC)
 endif()
 
 target_include_directories(fl INTERFACE include)
+
+install(DIRECTORY include DESTINATION include)
