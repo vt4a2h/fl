@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.17)
 
 project(
     fl
-    VERSION 0.1
+    VERSION 0.0.1
     DESCRIPTION "Cats for cpp :)"
     LANGUAGES CXX
 )
