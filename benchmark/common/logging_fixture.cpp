@@ -16,6 +16,8 @@
 
 #include "spdlog/spdlog.h"
 
+#include <fmt/format.h>
+
 namespace common::util {
 
 LoggingFixture::LoggingFixture()
@@ -31,7 +33,7 @@ LoggingFixture::~LoggingFixture()
     try {
         std::filesystem::remove_all(logger_.first.parent_path());
     } catch (const std::exception &e) {
-        std::cerr << "[LoggingFixture] Error: " << e.what();
+        fmt::print("[LoggingFixture] Error: {}", e.what());
     }
 }
 

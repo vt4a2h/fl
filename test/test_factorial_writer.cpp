@@ -33,11 +33,11 @@ using Writer = fl::Writer<Log, Either<SomeResult, Error>>;
 [[nodiscard]]
 Value factorial_side_effect(Value i) {
     if (i == 0) {
-        std::cerr << "Factorial of 0 is 1\n";
+        fmt::print("Factorial of 0 is 1\n");
         return 1;
     } else {
         auto ans = factorial_side_effect(i - 1) * i;
-        std::cerr << "Factorial of " << i << " is " << ans << "\n";
+        fmt::print("Factorial of {} is {}\n", i, ans);
         return ans;
     }
 }
@@ -79,7 +79,6 @@ Logger factorial(Value i) {
 
 TEST_CASE("Side-effect factorial") {
     auto v = factorial_side_effect(5);
-    std::cerr << "Value: " << v << "\n";
     REQUIRE(v == 120);
 }
 
