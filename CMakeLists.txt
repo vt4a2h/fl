@@ -10,6 +10,7 @@ project(
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     set_property(GLOBAL PROPERTY USE_FOLDERS ON)
     include(CTest)
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/vcpkg.json)
 endif()
 
 add_subdirectory(src)
