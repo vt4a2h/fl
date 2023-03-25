@@ -2,13 +2,15 @@ add_library(fl INTERFACE)
 
 add_library(fl::fl ALIAS fl)
 
-set_target_properties(fl PROPERTIES
-    CXX_STANDARD 23
-    CMAKE_CXX_EXTENSIONS OFF
-)
+if (FL_DEV)
+    set_target_properties(fl PROPERTIES
+        CXX_STANDARD 23
+        CMAKE_CXX_EXTENSIONS OFF
+    )
 
-if(NOT MSVC)
-    target_compile_options(fl INTERFACE -Wall -Wextra -pedantic -Werror)
+    if(NOT MSVC)
+        target_compile_options(fl INTERFACE -Wall -Wextra -pedantic -Werror)
+    endif()
 endif()
 
 target_include_directories(
