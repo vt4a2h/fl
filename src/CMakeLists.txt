@@ -36,14 +36,14 @@ install(
 )
 install(
     EXPORT fl-targets FILE fl-targets.cmake
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/fl
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake
 )
 install(
     FILES
         ${CMAKE_CURRENT_BINARY_DIR}/fl-config-version.cmake
         ${fl_SOURCE_DIR}/cmake/fl-config.cmake
     DESTINATION
-        ${CMAKE_INSTALL_LIBDIR}/cmake/fl
+        ${CMAKE_INSTALL_LIBDIR}/cmake
 )
 install(
     DIRECTORY include/fl
