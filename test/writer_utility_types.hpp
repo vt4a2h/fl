@@ -12,7 +12,7 @@
 #include <string>
 
 #include <fl/semigroups/semigroup.hpp>
-#include "fl/writer/writer.hpp"
+#include <fl/writer/writer.hpp>
 
 namespace writer_tests_util {
 

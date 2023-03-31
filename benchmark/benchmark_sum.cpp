@@ -16,10 +16,8 @@
 
 #include <fmt/format.h>
 
-#include <fl/semigroups/all.hpp>
-#include "fl/writer/writer.hpp"
+#include <fl/writer/all.hpp>
 
-#include "common/util.hpp"
 #include "common/logging_fixture.hpp"
 
 using Log = std::vector<std::string>;

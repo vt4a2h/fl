@@ -10,7 +10,7 @@
 //
 #include <fl/concepts/concepts.hpp>
 #include <fl/util/any_semigroup.hpp>
-#include "fl/writer/writer.hpp"
+#include <fl/writer/writer.hpp>
 
 #include "catch.hpp"
 

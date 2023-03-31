@@ -10,25 +10,11 @@
 //
 #include <fmt/format.h>
 
-#include "fl/writer/writer.hpp"
-#include <fl/semigroups/all.hpp>
-
 #include <ranges>
-#include <iostream>
 
 #include "writer_default_types.hpp"
 
 #include "catch.hpp"
-
-template <class V, class T>
-struct Either{};
-
-struct Error{};
-
-struct SomeResult{};
-
-
-using Writer = fl::Writer<Log, Either<SomeResult, Error>>;
 
 [[nodiscard]]
 Value factorial_side_effect(Value i) {
