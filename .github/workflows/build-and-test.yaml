@@ -34,9 +34,10 @@ jobs:
         run: |
           cmake --build cmake-build  --parallel --config ${{ matrix.build_type }} || exit $?
       - name: Test
-        run: |
-          cd cmake-build || exit $?
-          ctest . || exit $?
+        run: ctest -E "benchmark$" --test-dir "cmake-build" || exit $?
+      - name: Benchmark
+        if: ${{ matrix.build_type == 'Release' }}
+        run: ctest -R "benchmark$" --test-dir "cmake-build" || exit $?
   build-mac:
     name: Build ${{ matrix.os }} ${{ matrix.build_type }} with ${{ matrix.preset }}
     strategy:
@@ -71,9 +72,10 @@ jobs:
         run: |
           cmake --build cmake-build  --parallel --config ${{ matrix.build_type }} || exit $?
       - name: Test
-        run: |
-          cd cmake-build || exit $?
-          ctest . || exit $?
+        run: ctest -E "benchmark$" --test-dir "cmake-build" || exit $?
+      - name: Benchmark
+        if: ${{ matrix.build_type == 'Release' }}
+        run: ctest -R "benchmark$" --test-dir "cmake-build" || exit $?
   build-windows:
     name: Build ${{ matrix.os }} ${{ matrix.build_type }} with ${{ matrix.preset }}
     strategy:
@@ -116,6 +118,8 @@ jobs:
           cmake --build cmake-build --parallel --config ${{ matrix.build_type }}
       - name: Test
         shell: powershell
-        run: |
-          cd cmake-build
-          ctest .
+        run: ctest -E "benchmark$" --test-dir "cmake-build"
+      - name: Benchmark
+        if: ${{ matrix.build_type == 'Release' }}
+        shell: powershell
+        run: ctest -R "benchmark$" --test-dir "cmake-build"
