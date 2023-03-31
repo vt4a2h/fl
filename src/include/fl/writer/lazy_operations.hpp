@@ -23,12 +23,11 @@ struct InvocableAsWriter
 {
     using writer_invocable_operation_tag_ = std::void_t<>;
 
-    [[nodiscard]] decltype(auto) operator()()
-    { return std::invoke(f); }
-    [[nodiscard]] decltype(auto) operator*()
-    { return std::invoke(f); }
-    [[nodiscard]] decltype(auto) eval()
-    { return operator()(); }
+    [[nodiscard]] decltype(auto) operator()() { return std::invoke(f); }
+
+    [[nodiscard]] decltype(auto) operator*() { return std::invoke(f); }
+
+    [[nodiscard]] decltype(auto) eval() { return operator()(); }
 
     std::remove_cvref_t<F> f;
 };
@@ -47,8 +46,7 @@ decltype(auto) evaluate(WriterLike &&writerLike)requires SuitableWriter<WriterLi
 {
     if constexpr (fl::concepts::IsProbablyWriter<WriterLike>) {
         return std::forward<WriterLike>(writerLike);
-    }
-    else {
+    } else {
         return std::invoke(std::forward<WriterLike>(writerLike));
     }
 }
