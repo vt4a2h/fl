@@ -9,13 +9,37 @@
 ## Overview
 
 This is a rather simple implementation of the Writer monad in C++. In this implementation, Writer is not really a monad,
-but still can be used for logging without side effects. This is a very experimental library. It's not widely used,
-not well-tested, and requires new compilers with C++23 support.
+but still can be used for logging without side effects. This is a very experimental library.
 
 ## How to use
 
-Neither vcpkg nor Conan integrations are available now, but this is the header-only library. It means that you can
-simply clone the repo, add it as a sub-folder (or even a submodule) to your project and use.
+There is a non-official vcpkg registry I created for this package. In order to use it, you need to:
+- Create `vcpkg-configuration.json` next to the `vcpkg.json`
+- Add a registry called `https://github.com/vt4a2h/fl-vcpkg-registry.git` for the dependency `fl`
+- Add `fl` to the dependencies list in the `vcpkg.json`
+
+For example:
+```json
+{
+  "registries": [
+    {
+      "kind": "git",
+      "repository": "https://github.com/vt4a2h/fl-vcpkg-registry.git",
+      "packages": [
+        "fl"
+      ],
+      "baseline": "e86eb93a9fb28391730b7d31a004e8b5516f4528"
+    }
+  ]
+}
+```
+
+And that's it! Please, make sure that your compiler is new enough and supports C++23.
+
+NB! Do not use `https://github.com/vt4a2h/fl-vcpkg-registry.git` for any official, production-ready builds. 
+In case you want, mirror it, or just copy it.
+
+Alternatively, you can clone the repo as a submodule and include `src/include` directory.
 
 ## Simple use case
 
