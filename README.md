@@ -34,7 +34,21 @@ For example:
 }
 ```
 
-And that's it! Please, make sure that your compiler is new enough and supports C++23.
+Then add the following lines to the `CMakeListst.txt` file:
+```cmake
+find_package(fl CONFIG REQUIRED)
+target_link_libraries(my_app PRIVATE fl::fl)
+```
+
+And that's it, you can use the library now! Please, make sure that your compiler is new enough and supports C++23.
+
+```c++
+#include <fl/writer/all.hpp>
+
+// ...
+
+fl::Writer<std::string, int> writer;
+```
 
 NB! Do not use `https://github.com/vt4a2h/fl-vcpkg-registry.git` for any official, production-ready builds. 
 In case you want, mirror it, or just copy it.
