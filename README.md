@@ -18,7 +18,7 @@ There is a non-official vcpkg registry I created for this package. In order to u
 - Add a registry called `https://github.com/vt4a2h/fl-vcpkg-registry.git` for the dependency `fl`
 - Add `fl` to the dependencies list in the `vcpkg.json`
 
-For example:
+`vcpkg-configuration.json`
 ```json
 {
   "registries": [
@@ -32,6 +32,12 @@ For example:
     }
   ]
 }
+```
+`vcpkg.json`
+```json
+"dependencies": [
+  "fl"
+],
 ```
 
 Then add the following lines to the `CMakeListst.txt` file:
