@@ -18,7 +18,7 @@
 
 namespace details {
 
-template<class F>
+template <class F>
 struct InvocableAsWriter
 {
     using writer_invocable_operation_tag_ = std::void_t<>;
@@ -32,16 +32,16 @@ struct InvocableAsWriter
     std::remove_cvref_t<F> f;
 };
 
-template<class F>
+template <class F>
 InvocableAsWriter(F &&) -> InvocableAsWriter<std::remove_cvref_t<F>>;
 
-template<class T>
+template <class T>
 concept IsInvokableAsWriter = requires { typename std::remove_cvref_t<T>::writer_invocable_operation_tag_; };
 
-template<class W>
+template <class W>
 concept SuitableWriter = fl::concepts::IsProbablyWriter<W> || details::IsInvokableAsWriter<W>;
 
-template<class WriterLike>
+template <class WriterLike>
 decltype(auto) evaluate(WriterLike &&writerLike)requires SuitableWriter<WriterLike>
 {
     if constexpr (fl::concepts::IsProbablyWriter<WriterLike>) {
@@ -55,55 +55,57 @@ decltype(auto) evaluate(WriterLike &&writerLike)requires SuitableWriter<WriterLi
 
 namespace fl::ops {
 
-struct OpDefaultTag {};
-struct OpTellTag {};
-struct OpTransformTag {};
-struct OpAndThenTag {};
+struct OperationBase {};
 
-struct EvalType {};
-
-template<class F, class OpTag = OpDefaultTag>
-struct Op
-{
-    using tag_ = OpTag;
-    std::remove_cvref_t<F> f;
+template <class F>
+struct Operation : OperationBase {
+    using U = std::remove_cvref_t<F>;
+    U u;
 };
 
-template<class T>
-concept IsOperation = requires { typename std::remove_cvref_t<T>::tag_; };
+template <class F> struct Tell : Operation<F> {};
 
-template<class T>
-concept IsWriterTellOperation =
-IsOperation<T> && std::is_same_v<typename std::remove_cvref_t<T>::tag_, OpTellTag>;
+template <class F> struct Transform : Operation<F> {};
 
-template<class T>
-concept IsWriterTransformOperation =
-IsOperation<T> && std::is_same_v<typename std::remove_cvref_t<T>::tag_, OpTransformTag>;
+template <class F> struct AndThen : Operation<F> {};
 
-template<class T>
-concept IsWriterAndThenOperation =
-IsOperation<T> && std::is_same_v<typename std::remove_cvref_t<T>::tag_, OpAndThenTag>;
+struct Eval : OperationBase {};
+
+template <class T>
+concept BasedOnOperation = std::is_base_of_v<OperationBase, std::remove_cvref_t<T>>;
+
+template <BasedOnOperation T>
+using UnderlyingType = typename std::remove_cvref_t<T>::U;
+
+template <class T>
+concept IsWriterTellOperation = std::is_same_v<std::remove_cvref_t<T>, Tell<UnderlyingType<T>>>;
+
+template <class T>
+concept IsWriterTransformOperation = std::is_same_v<std::remove_cvref_t<T>, Transform<UnderlyingType<T>>>;
+
+template <class T>
+concept IsWriterAndThenOperation = std::is_same_v<std::remove_cvref_t<T>, AndThen<UnderlyingType<T>>>;
 
 } // fl::ops
 
 namespace fl {
 
-template<class F>
-decltype(auto) transform(F &&f) { return ops::Op<F, ops::OpTransformTag>{std::forward<F>(f)}; }
+template <class F>
+decltype(auto) transform(F &&f) { return ops::Transform<F>{{{}, std::forward<F>(f)}}; }
 
-template<class F>
-decltype(auto) tell(F &&f) { return ops::Op<F, ops::OpTellTag>{std::forward<F>(f)}; }
+template <class F>
+decltype(auto) tell(F &&f) { return ops::Tell<F>{{{}, std::forward<F>(f)}}; }
 
-template<class F>
-decltype(auto) and_then(F &&f) { return ops::Op<F, ops::OpAndThenTag>{std::forward<F>(f)}; }
+template <class F>
+decltype(auto) and_then(F &&f) { return ops::AndThen<F>{{{}, std::forward<F>(f)}};}
 
-static constexpr auto eval = ops::EvalType{};
+static constexpr auto eval = ops::Eval{};
 
 decltype(auto) operator|(details::SuitableWriter auto &&w, ops::IsWriterTellOperation auto &&op)
 {
     return details::InvocableAsWriter{
         [w = std::forward<decltype(w)>(w), op = std::forward<decltype(op)>(op)]() mutable {
-            return details::evaluate(std::move(w)).tell(std::move(op).f);
+            return details::evaluate(std::move(w)).tell(std::move(op).u);
         }
     };
 }
@@ -112,7 +114,7 @@ decltype(auto) operator|(details::SuitableWriter auto &&w, ops::IsWriterTransfor
 {
     return details::InvocableAsWriter{
         [w = std::forward<decltype(w)>(w), op = std::forward<decltype(op)>(op)]() mutable {
-            return details::evaluate(std::move(w)).transform(std::move(op).f);
+            return details::evaluate(std::move(w)).transform(std::move(op).u);
         }
     };
 }
@@ -121,11 +123,11 @@ decltype(auto) operator|(details::SuitableWriter auto &&w, ops::IsWriterAndThenO
 {
     return details::InvocableAsWriter{
         [w = std::forward<decltype(w)>(w), op = std::forward<decltype(op)>(op)]() mutable {
-            return details::evaluate(std::move(w)).and_then(std::move(op).f);
+            return details::evaluate(std::move(w)).and_then(std::move(op).u);
         }
     };
 }
 
-decltype(auto) operator|(details::IsInvokableAsWriter auto &&w, const ops::EvalType &) { return w.eval(); }
+decltype(auto) operator|(details::IsInvokableAsWriter auto &&w, const ops::Eval &) { return w.eval(); }
 
 } // namespace fl
