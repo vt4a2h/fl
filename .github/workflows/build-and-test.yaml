@@ -104,7 +104,7 @@ jobs:
       - name: Configure
         shell: powershell
         run: |
-          & 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\Launch-VsDevShell.ps1'
+          & 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\Launch-VsDevShell.ps1' -SkipAutomaticLocation
           cmake -S . -B cmake-build --preset ${{ matrix.preset }} `
           -DFL_DEV=ON `
           -DFL_TEST=ON `
@@ -114,7 +114,7 @@ jobs:
       - name: Build
         shell: powershell
         run: |
-          & 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\Launch-VsDevShell.ps1'
+          & 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\Launch-VsDevShell.ps1' -SkipAutomaticLocation
           cmake --build cmake-build --parallel --config ${{ matrix.build_type }}
       - name: Test
         shell: powershell
