@@ -68,7 +68,6 @@ template<class Log, class Value>
 struct Writer {
     using LogType = std::remove_cvref_t<Log>;
     using ValueType = std::remove_cvref_t<Value>;
-    using writer_tag_ = Writer<LogType, ValueType>;
 
     Writer() = default;
     Writer(const Writer &) = default;

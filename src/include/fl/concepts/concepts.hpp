@@ -13,6 +13,13 @@
 #include <concepts>
 #include <utility>
 
+namespace fl {
+
+template<class Log, class Value>
+struct Writer;
+
+} // namespace fl
+
 namespace fl::concepts {
 
 template<class F, class Arg>
@@ -32,14 +39,13 @@ concept IsProbablySemigroup = requires(S s, V v) {
 };
 
 template <class W>
-concept IsProbablyWriter = requires {
-    typename std::remove_cvref_t<W>::LogType;
-    typename std::remove_cvref_t<W>::ValueType;
-    typename std::remove_cvref_t<W>::writer_tag_;
-};
+concept IsWriter = std::same_as<
+    std::remove_cvref_t<W>,
+    fl::Writer<typename std::remove_cvref_t<W>::LogType, typename std::remove_cvref_t<W>::ValueType>
+>;
 
 template<class F, class Arg>
 concept InvocableAndReturnsWriter =
-    std::is_invocable_v<F, Arg> && IsProbablyWriter<std::invoke_result_t<F, Arg>>;
+    std::is_invocable_v<F, Arg> && IsWriter<std::invoke_result_t<F, Arg>>;
 
 } // fl::concepts

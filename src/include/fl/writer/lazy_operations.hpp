@@ -21,7 +21,7 @@ namespace details {
 template <class F>
 struct InvocableAsWriter
 {
-    using writer_invocable_operation_tag_ = std::void_t<>;
+    using InvocanbleType = std::remove_cvref_t<F>;
 
     [[nodiscard]] decltype(auto) operator()() { return std::invoke(f); }
 
@@ -29,22 +29,25 @@ struct InvocableAsWriter
 
     [[nodiscard]] decltype(auto) eval() { return operator()(); }
 
-    std::remove_cvref_t<F> f;
+    InvocanbleType f;
 };
 
 template <class F>
 InvocableAsWriter(F &&) -> InvocableAsWriter<std::remove_cvref_t<F>>;
 
 template <class T>
-concept IsInvokableAsWriter = requires { typename std::remove_cvref_t<T>::writer_invocable_operation_tag_; };
+concept IsInvokableAsWriter = std::same_as<
+    std::remove_cvref_t<T>,
+    InvocableAsWriter<typename std::remove_cvref_t<T>::InvocanbleType>
+>;
 
 template <class W>
-concept SuitableWriter = fl::concepts::IsProbablyWriter<W> || details::IsInvokableAsWriter<W>;
+concept SuitableWriter = fl::concepts::IsWriter<W> || details::IsInvokableAsWriter<W>;
 
-template <class WriterLike>
-decltype(auto) evaluate(WriterLike &&writerLike)requires SuitableWriter<WriterLike>
+template <SuitableWriter WriterLike>
+decltype(auto) evaluate(WriterLike &&writerLike)
 {
-    if constexpr (fl::concepts::IsProbablyWriter<WriterLike>) {
+    if constexpr (fl::concepts::IsWriter<WriterLike>) {
         return std::forward<WriterLike>(writerLike);
     } else {
         return std::invoke(std::forward<WriterLike>(writerLike));
