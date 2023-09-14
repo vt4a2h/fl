@@ -49,4 +49,17 @@ TEST_CASE("Combine") {
         REQUIRE(s.combine(std::set<int>{1, 2, 3}, std::set<int>{4, 5, 6}) == std::set<int>{1, 2, 3, 4, 5, 6});
         REQUIRE(s.combine(std::set<int>{1, 2, 3}, std::set<int>{1, 4, 5, 6}) == std::set<int>{1, 2, 3, 4, 5, 6});
     }
+
+    SECTION("Vector wit element") {
+        fl::Semigroup<std::vector<int>> s;
+
+        REQUIRE(s.combine(std::vector<int>{1, 2, 3}, 4) == std::vector<int>{1, 2, 3, 4});
+    }
+
+    SECTION("Set with element") {
+        fl::Semigroup<std::set<int>> s;
+
+        REQUIRE(s.combine(std::set<int>{1, 2, 3}, 4) == std::set<int>{1, 2, 3, 4});
+        REQUIRE(s.combine(std::set<int>{1, 2, 4}, 3) == std::set<int>{1, 2, 3, 4});
+    }
 }

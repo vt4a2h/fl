@@ -41,4 +41,13 @@ TEST_CASE("Writer method tell") {
         REQUIRE(l2.log() == Log{
             {"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam fermentum erat nec hendrerit interdum."}});
     }
+
+    SECTION("Combine loger with an element") {
+        const auto l = Logger{};
+        std::string logEntry{"foo"};
+
+        const auto result = l.tell(logEntry).tell(logEntry);
+
+        REQUIRE(result.log() == std::vector<std::string>{"foo", "foo"});
+    }
 }

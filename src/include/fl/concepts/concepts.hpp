@@ -38,6 +38,11 @@ concept IsProbablySemigroup = requires(S s, V v) {
     { s.combine(std::move(v), std::move(v)) } -> std::same_as<V>;
 };
 
+template<class S, class Container, class Value>
+concept CombinableWithValue = requires(S s, Container &&v1, Value &&v2) {
+    { s.combine(std::forward<Container>(v1), std::forward<Value>(v2)) } -> std::same_as<std::remove_cvref_t<Container>>;
+};
+
 template <class W>
 concept IsWriter = std::same_as<
     std::remove_cvref_t<W>,

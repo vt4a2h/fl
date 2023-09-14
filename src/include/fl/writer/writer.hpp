@@ -181,6 +181,21 @@ struct Writer {
                                      fl::util::move_if_possible(_value));
     }
 
+    template<class LogEntry>
+    requires _concepts::WithSemigroup<LogType> &&
+              concepts::CombinableWithValue<Semigroup<LogType>, LogType, std::remove_cvref_t<LogEntry>>
+    constexpr auto tell(LogEntry &&l) const & {
+        return _details::make_writer(Semigroup<LogType>{}.combine(_log, std::forward<LogEntry>(l)), _value);
+    }
+
+    template<class LogEntry>
+    requires _concepts::WithSemigroup<LogType> &&
+             concepts::CombinableWithValue<Semigroup<LogType>, LogType, std::remove_cvref_t<LogEntry>>
+    constexpr auto tell(LogEntry &&l) && {
+        return _details::make_writer(Semigroup<LogType>{}.combine(std::move(_log), std::forward<LogEntry>(l)),
+                                     fl::util::move_if_possible(_value));
+    }
+
     /*!
      * Change places of value and log.
      *

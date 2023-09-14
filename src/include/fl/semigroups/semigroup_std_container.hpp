@@ -42,6 +42,14 @@ struct Semigroup<T> {
         v1.insert(std::end(v1), std::begin(v2), std::end(v2));
         return std::forward<T>(v1);
     }
+
+    template<class Container, class Value>
+    requires std::is_same_v<std::remove_cvref_t<Container>, T> &&
+                std::is_same_v<typename std::remove_cvref_t<Container>::value_type, std::remove_cvref_t<Value>>
+    [[nodiscard]] decltype(auto) combine(Container container, Value &&value) const {
+        container.emplace_back(std::forward<Value>(value));
+        return container;
+    }
 };
 
 template<concepts::InsertableContainer T>
@@ -74,6 +82,14 @@ struct Semigroup<T> {
         fl::concepts::InsertableContainer auto result = v2;
         result.insert(std::end(result), std::make_move_iterator(std::begin(v1)), std::make_move_iterator(std::end(v1)));
         return result;
+    }
+
+    template<class Container, class Value>
+    requires std::is_same_v<std::remove_cvref_t<Container>, T> &&
+        std::is_same_v<typename std::remove_cvref_t<Container>::value_type, std::remove_cvref_t<Value>>
+    [[nodiscard]] decltype(auto) combine(Container container, Value &&value) const {
+        container.insert(std::forward<Value>(value));
+        return container;
     }
 };
 } // namespace fl
