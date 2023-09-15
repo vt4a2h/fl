@@ -47,7 +47,7 @@ Logger better_factorial(Value i) {
     } else {
         auto r = better_factorial(i - 1).transform([&](Value v)
                                                    { return v * i; });
-        return r.tell({fmt::format("Factorial of {} is {}", i, r.value())});
+        return r.tell(fmt::format("Factorial of {} is {}", i, r.value()));
     }
 }
 
