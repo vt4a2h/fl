@@ -43,9 +43,7 @@ struct Semigroup<T> {
         return std::forward<T>(v1);
     }
 
-    template<class Container, class Value>
-    requires std::is_same_v<std::remove_cvref_t<Container>, T> &&
-                std::is_same_v<typename std::remove_cvref_t<Container>::value_type, std::remove_cvref_t<Value>>
+    template<concepts::SameContainer<T> Container, concepts::SameElementType<Container> Value>
     [[nodiscard]] decltype(auto) combine(Container container, Value &&value) const {
         container.emplace_back(std::forward<Value>(value));
         return container;
@@ -84,9 +82,7 @@ struct Semigroup<T> {
         return result;
     }
 
-    template<class Container, class Value>
-    requires std::is_same_v<std::remove_cvref_t<Container>, T> &&
-        std::is_same_v<typename std::remove_cvref_t<Container>::value_type, std::remove_cvref_t<Value>>
+    template<concepts::SameContainer<T> Container, concepts::SameElementType<Container> Value>
     [[nodiscard]] decltype(auto) combine(Container container, Value &&value) const {
         container.insert(std::forward<Value>(value));
         return container;
