@@ -16,6 +16,8 @@
 #include <memory>
 #include <fl/concepts/concepts.hpp>
 
+namespace fl::ops {
+
 namespace details {
 
 template <class F>
@@ -55,8 +57,6 @@ decltype(auto) evaluate(WriterLike &&writerLike)
 }
 
 } // namespace details
-
-namespace fl::ops {
 
 struct OperationBase {};
 
@@ -104,33 +104,33 @@ decltype(auto) and_then(F &&f) { return ops::AndThen<F>{{{}, std::forward<F>(f)}
 
 static constexpr auto eval = ops::Eval{};
 
-decltype(auto) operator|(details::SuitableWriter auto &&w, ops::IsWriterTellOperation auto &&op)
+decltype(auto) operator|(fl::ops::details::SuitableWriter auto &&w, ops::IsWriterTellOperation auto &&op)
 {
-    return details::InvocableAsWriter{
+    return fl::ops::details::InvocableAsWriter{
         [w = std::forward<decltype(w)>(w), op = std::forward<decltype(op)>(op)]() mutable {
-            return details::evaluate(std::move(w)).tell(std::move(op).u);
+            return fl::ops::details::evaluate(std::move(w)).tell(std::move(op).u);
         }
     };
 }
 
-decltype(auto) operator|(details::SuitableWriter auto &&w, ops::IsWriterTransformOperation auto &&op)
+decltype(auto) operator|(fl::ops::details::SuitableWriter auto &&w, ops::IsWriterTransformOperation auto &&op)
 {
-    return details::InvocableAsWriter{
+    return fl::ops::details::InvocableAsWriter{
         [w = std::forward<decltype(w)>(w), op = std::forward<decltype(op)>(op)]() mutable {
-            return details::evaluate(std::move(w)).transform(std::move(op).u);
+            return fl::ops::details::evaluate(std::move(w)).transform(std::move(op).u);
         }
     };
 }
 
-decltype(auto) operator|(details::SuitableWriter auto &&w, ops::IsWriterAndThenOperation auto &&op)
+decltype(auto) operator|(fl::ops::details::SuitableWriter auto &&w, ops::IsWriterAndThenOperation auto &&op)
 {
-    return details::InvocableAsWriter{
+    return fl::ops::details::InvocableAsWriter{
         [w = std::forward<decltype(w)>(w), op = std::forward<decltype(op)>(op)]() mutable {
-            return details::evaluate(std::move(w)).and_then(std::move(op).u);
+            return fl::ops::details::evaluate(std::move(w)).and_then(std::move(op).u);
         }
     };
 }
 
-decltype(auto) operator|(details::IsInvokableAsWriter auto &&w, const ops::Eval &) { return w.eval(); }
+decltype(auto) operator|(fl::ops::details::IsInvokableAsWriter auto &&w, const ops::Eval &) { return w.eval(); }
 
 } // namespace fl
