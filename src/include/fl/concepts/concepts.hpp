@@ -29,13 +29,10 @@ template<class F, class Arg, class Result>
 concept InvocableWithResult = std::is_invocable_r_v<Result, F, Arg>;
 
 template<class S, class V = typename std::remove_cvref_t<S>::ValueType>
-concept IsProbablySemigroup = requires(S s, V v) {
+concept IsProbablySemigroup = requires(S s, V &&v1, V &&v2) {
     typename std::remove_cvref_t<S>::ValueType;
 
-    { s.combine(v, v) } -> std::same_as<V>;
-    { s.combine(std::move(v), v) } -> std::same_as<V>;
-    { s.combine(v, std::move(v)) } -> std::same_as<V>;
-    { s.combine(std::move(v), std::move(v)) } -> std::same_as<V>;
+    { s.combine(std::forward<V>(v1), std::forward<V>(v2)) } -> std::same_as<std::remove_cvref_t<V>>;
 };
 
 template<class S, class Container, class Value>
