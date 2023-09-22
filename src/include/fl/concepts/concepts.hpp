@@ -98,6 +98,8 @@ template<class FirstContainer, class SecondContainer>
 concept SameContainer = std::is_same_v<std::remove_cvref_t<FirstContainer>, std::remove_cvref_t<SecondContainer>>;
 
 template<class Value, class Container>
-concept SameElementType = std::is_same_v<typename std::remove_cvref_t<Container>::value_type, std::remove_cvref_t<Value>>;
+concept SameElementType =
+    std::is_same_v<typename std::remove_cvref_t<Container>::value_type, std::remove_cvref_t<Value>> ||
+        std::is_constructible_v<typename std::remove_cvref_t<Container>::value_type, std::remove_cvref_t<Value>>;
 
 } // fl::concepts

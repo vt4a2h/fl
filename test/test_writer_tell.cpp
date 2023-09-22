@@ -50,4 +50,10 @@ TEST_CASE("Writer method tell") {
 
         REQUIRE(result.log() == std::vector<std::string>{"foo", "foo"});
     }
+
+    SECTION("Combine loger with convertible element") {
+        const auto result = Logger{}.tell("foo").tell("foo");
+
+        REQUIRE(result.log() == std::vector<std::string>{"foo", "foo"});
+    }
 }
