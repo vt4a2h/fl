@@ -355,6 +355,9 @@ struct Writer {
                                      std::invoke(w._value, fl::util::move_if_possible(_value)));
     }
 
+    auto operator<=> (const Writer&) const = default;
+    bool operator== (const Writer&) const = default;
+
     LogType _log;
     ValueType _value;
 };
