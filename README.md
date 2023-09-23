@@ -112,7 +112,7 @@ Then the writer can be easily used as usual:
 ```c++
 auto customWriter = fl::Writer<MyString, int>{"foo", 1};
 
-auto actual = customWriter.tell("bar")._log;
+auto actual = customWriter.tell("bar").log_;
 auto expected = MyString("foo\nbar");
 
 REQUIRE(actual == expected);

@@ -16,13 +16,13 @@ TEST_CASE("Writer transform function") {
     SECTION("To the same type") {
         const auto mapped = Logger{{}, 1}.transform([](auto v) { return ++v; });
 
-        REQUIRE(mapped._value == 2);
+        REQUIRE(mapped.value() == 2);
     }
 
     SECTION("To the another type") {
         const auto mapped = Logger{{}, 1}.transform([](auto v) { return std::to_string(v); });
 
-        REQUIRE(mapped._value == std::string("1"));
+        REQUIRE(mapped.value() == std::string("1"));
     }
 
     SECTION("Log is not affected") {

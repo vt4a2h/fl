@@ -36,7 +36,7 @@ TEST_CASE("Writer with custom semigroup") {
     SECTION("custom tell") {
         auto customWriter = fl::Writer<MyString, int>{"foo", 1};
 
-        auto actual = customWriter.tell("bar")._log;
+        auto actual = customWriter.tell("bar").log();
         auto expected = MyString("foo\nbar");
 
         REQUIRE(actual == expected);

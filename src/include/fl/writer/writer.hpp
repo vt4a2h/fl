@@ -71,19 +71,19 @@ struct Writer {
 
     Writer() = default;
 
-    Writer(const Log &l, const Value &v) : _log(l), _value(v) {}
+    Writer(const Log &l, const Value &v) : log_(l), value_(v) {}
 
     Writer(Log &&l, Value &&v)
         requires _concepts::MoveConstructable<LogType, ValueType>
-            : _log(std::move(l)), _value(std::move(v)) {}
+            : log_(std::move(l)), value_(std::move(v)) {}
 
     Writer(Log &&l, const Value &v)
         requires _concepts::MoveConstructable<LogType>
-            : _log(std::move(l)), _value(v) {}
+            : log_(std::move(l)), value_(v) {}
 
     Writer(const Log &l, Value &&v)
         requires _concepts::MoveConstructable<ValueType>
-            : _log(l), _value(std::move(v)) {}
+            : log_(l), value_(std::move(v)) {}
 
     /*!
      * Transform the existing value of writer.
@@ -92,15 +92,15 @@ struct Writer {
      * @return a copy of the object with the same log, but transformed value.
      */
     constexpr auto transform(concepts::Invocable<ValueType> auto f) const & {
-        return _details::make_writer(_log, std::invoke(f, _value));
+        return _details::make_writer(log_, std::invoke(f, value_));
     }
 
     constexpr auto transform(concepts::Invocable<ValueType> auto f) && {
-        return _details::make_writer(fl::util::move_if_possible(_log), std::invoke(f, fl::util::move_if_possible(_value)));
+        return _details::make_writer(fl::util::move_if_possible(log_), std::invoke(f, fl::util::move_if_possible(value_)));
     }
 
     constexpr auto transform(concepts::Invocable<ValueType> auto f) const && {
-        return _details::make_writer(fl::util::move_if_possible(_log), std::invoke(f, fl::util::move_if_possible(_value)));
+        return _details::make_writer(fl::util::move_if_possible(log_), std::invoke(f, fl::util::move_if_possible(value_)));
     }
 
     /*!
@@ -114,81 +114,81 @@ struct Writer {
      */
     constexpr auto tell(LogType &&l) const &
     requires _concepts::WithSemigroup<LogType> {
-        return _details::make_writer(Semigroup<LogType>{}.combine(_log, fl::util::move_if_possible(l)), _value);
+        return _details::make_writer(Semigroup<LogType>{}.combine(log_, fl::util::move_if_possible(l)), value_);
     }
 
     constexpr auto tell(const LogType &l) const &
     requires _concepts::WithSemigroup<LogType> {
-        return _details::make_writer(Semigroup<LogType>{}.combine(_log, l), _value);
+        return _details::make_writer(Semigroup<LogType>{}.combine(log_, l), value_);
     }
 
     constexpr auto tell(LogType &&l) &&
     requires _concepts::WithSemigroup<LogType> {
         return _details::make_writer(
-            Semigroup<LogType>{}.combine(fl::util::move_if_possible(_log), fl::util::move_if_possible(l)),
-            fl::util::move_if_possible(_value)
+            Semigroup<LogType>{}.combine(fl::util::move_if_possible(log_), fl::util::move_if_possible(l)),
+            fl::util::move_if_possible(value_)
         );
     }
 
     constexpr auto tell(const LogType &l) &&
     requires _concepts::WithSemigroup<LogType> {
-        return _details::make_writer(Semigroup<LogType>{}.combine(fl::util::move_if_possible(_log), l),
-                                     fl::util::move_if_possible(_value));
+        return _details::make_writer(Semigroup<LogType>{}.combine(fl::util::move_if_possible(log_), l),
+                                     fl::util::move_if_possible(value_));
     }
 
     constexpr auto tell(LogType &&l) const &&
     requires _concepts::WithSemigroup<LogType> {
         return _details::make_writer(
-            Semigroup<LogType>{}.combine(fl::util::move_if_possible(_log), fl::util::move_if_possible(l)),
-            fl::util::move_if_possible(_value)
+            Semigroup<LogType>{}.combine(fl::util::move_if_possible(log_), fl::util::move_if_possible(l)),
+            fl::util::move_if_possible(value_)
         );
     }
 
     constexpr auto tell(const LogType &l) const &&
     requires _concepts::WithSemigroup<LogType> {
-        return _details::make_writer(Semigroup<LogType>{}.combine(fl::util::move_if_possible(_log), l),
-                                     fl::util::move_if_possible(_value));
+        return _details::make_writer(Semigroup<LogType>{}.combine(fl::util::move_if_possible(log_), l),
+                                     fl::util::move_if_possible(value_));
     }
 
     constexpr auto tell(const LogType &l, const SemigroupWrapper<LogType> &sg) const & {
-        return _details::make_writer(sg.combine(_log, l), _value);
+        return _details::make_writer(sg.combine(log_, l), value_);
     }
 
     constexpr auto tell(LogType &&l, const SemigroupWrapper<LogType> &sg) const & {
-        return _details::make_writer(sg.combine(_log, fl::util::move_if_possible(l)), _value);
+        return _details::make_writer(sg.combine(log_, fl::util::move_if_possible(l)), value_);
     }
 
     constexpr auto tell(const LogType &l, const SemigroupWrapper<LogType> &sg) && {
-        return _details::make_writer(sg.combine(fl::util::move_if_possible(_log), l), fl::util::move_if_possible(_value));
+        return _details::make_writer(sg.combine(fl::util::move_if_possible(log_), l), fl::util::move_if_possible(value_));
     }
 
     constexpr auto tell(LogType &&l, const SemigroupWrapper<LogType> &sg) && {
-        return _details::make_writer(sg.combine(fl::util::move_if_possible(_log), fl::util::move_if_possible(l)),
-                                     fl::util::move_if_possible(_value));
+        return _details::make_writer(sg.combine(fl::util::move_if_possible(log_), fl::util::move_if_possible(l)),
+                                     fl::util::move_if_possible(value_));
     }
 
     constexpr auto tell(const LogType &l, const SemigroupWrapper<LogType> &sg) const && {
-        return _details::make_writer(sg.combine(fl::util::move_if_possible(_log), l), fl::util::move_if_possible(_value));
+        return _details::make_writer(sg.combine(fl::util::move_if_possible(log_), l), fl::util::move_if_possible(value_));
     }
 
     constexpr auto tell(LogType &&l, const SemigroupWrapper<LogType> &sg) const && {
-        return _details::make_writer(sg.combine(fl::util::move_if_possible(_log), fl::util::move_if_possible(l)),
-                                     fl::util::move_if_possible(_value));
+        return _details::make_writer(sg.combine(fl::util::move_if_possible(log_), fl::util::move_if_possible(l)),
+                                     fl::util::move_if_possible(value_));
     }
 
     template<class LogEntry>
     requires _concepts::WithSemigroup<LogType> &&
               concepts::CombinableWithValue<Semigroup<LogType>, LogType, std::remove_cvref_t<LogEntry>>
     constexpr auto tell(LogEntry &&l) const & {
-        return _details::make_writer(Semigroup<LogType>{}.combine(_log, std::forward<LogEntry>(l)), _value);
+        return _details::make_writer(Semigroup<LogType>{}.combine(log_, std::forward<LogEntry>(l)), value_);
     }
 
     template<class LogEntry>
     requires _concepts::WithSemigroup<LogType> &&
              concepts::CombinableWithValue<Semigroup<LogType>, LogType, std::remove_cvref_t<LogEntry>>
     constexpr auto tell(LogEntry &&l) && {
-        return _details::make_writer(Semigroup<LogType>{}.combine(std::move(_log), std::forward<LogEntry>(l)),
-                                     fl::util::move_if_possible(_value));
+        return _details::make_writer(Semigroup<LogType>{}.combine(std::move(log_), std::forward<LogEntry>(l)),
+                                     fl::util::move_if_possible(value_));
     }
 
     /*!
@@ -197,15 +197,15 @@ struct Writer {
      * @return a new writer object of the type Writer<Value, Log>.
      */
     constexpr auto swap() const & {
-        return _details::make_writer(_value, _log);
+        return _details::make_writer(value_, log_);
     }
 
     constexpr auto swap() && {
-        return _details::make_writer(fl::util::move_if_possible(_value), fl::util::move_if_possible(_log));
+        return _details::make_writer(fl::util::move_if_possible(value_), fl::util::move_if_possible(log_));
     }
 
     constexpr auto swap() const && {
-        return _details::make_writer(fl::util::move_if_possible(_value), fl::util::move_if_possible(_log));
+        return _details::make_writer(fl::util::move_if_possible(value_), fl::util::move_if_possible(log_));
     }
 
     /*!
@@ -213,15 +213,15 @@ struct Writer {
      * @return a copy of the value object.
      */
     constexpr auto value() const & {
-        return _value;
+        return value_;
     }
 
     constexpr auto value() && {
-        return fl::util::move_if_possible(_value);
+        return fl::util::move_if_possible(value_);
     }
 
     constexpr auto value() const && {
-        return fl::util::move_if_possible(_value);
+        return fl::util::move_if_possible(value_);
     }
 
     /*!
@@ -229,15 +229,15 @@ struct Writer {
      * @return a copy of the log object.
      */
     constexpr auto log() const & {
-        return _log;
+        return log_;
     }
 
     constexpr auto log() && {
-        return fl::util::move_if_possible(_log);
+        return fl::util::move_if_possible(log_);
     }
 
     constexpr auto log() const && {
-        return fl::util::move_if_possible(_log);
+        return fl::util::move_if_possible(log_);
     }
 
     /*!
@@ -245,15 +245,15 @@ struct Writer {
      * @return a tuple of copies of log and value objects.
      */
     constexpr auto as_tuple() const & {
-        return std::make_tuple(_log, _value);
+        return std::make_tuple(log_, value_);
     }
 
     constexpr auto as_tuple() && {
-        return std::make_tuple(fl::util::move_if_possible(_log), fl::util::move_if_possible(_value));
+        return std::make_tuple(fl::util::move_if_possible(log_), fl::util::move_if_possible(value_));
     }
 
     constexpr auto as_tuple() const && {
-        return std::make_tuple(fl::util::move_if_possible(_log), fl::util::move_if_possible(_value));
+        return std::make_tuple(fl::util::move_if_possible(log_), fl::util::move_if_possible(value_));
     }
 
     /*!
@@ -265,7 +265,7 @@ struct Writer {
      */
     constexpr auto reset() const
     requires _concepts::WithMonoid<LogType> {
-        return _details::make_writer(Monoid<LogType>().identity(), _value);
+        return _details::make_writer(Monoid<LogType>().identity(), value_);
     }
 
     /*!
@@ -275,28 +275,28 @@ struct Writer {
      */
     constexpr auto and_then(concepts::InvocableAndReturnsWriter<ValueType> auto f) const &
     requires _concepts::WithSemigroup<LogType> {
-        auto &&w = std::invoke(f, _value);
+        auto &&w = std::invoke(f, value_);
         return _details::make_writer(
-            Semigroup<LogType>().combine(_log, fl::util::move_if_possible(w._log)),
-            fl::util::move_if_possible(w._value)
+            Semigroup<LogType>().combine(log_, fl::util::move_if_possible(w.log_)),
+            fl::util::move_if_possible(w.value_)
         );
     }
 
     constexpr auto and_then(concepts::InvocableAndReturnsWriter<ValueType> auto f) &&
     requires _concepts::WithSemigroup<LogType> {
-        auto &&w = std::invoke(f, fl::util::move_if_possible(_value));
+        auto &&w = std::invoke(f, fl::util::move_if_possible(value_));
         return _details::make_writer(
-            Semigroup<LogType>().combine(fl::util::move_if_possible(_log), fl::util::move_if_possible(w._log)),
-            fl::util::move_if_possible(w._value)
+            Semigroup<LogType>().combine(fl::util::move_if_possible(log_), fl::util::move_if_possible(w.log_)),
+            fl::util::move_if_possible(w.value_)
         );
     }
 
     constexpr auto and_then(concepts::InvocableAndReturnsWriter<ValueType> auto f) const &&
     requires _concepts::WithSemigroup<LogType> {
-        auto &&w = std::invoke(f, fl::util::move_if_possible(_value));
+        auto &&w = std::invoke(f, fl::util::move_if_possible(value_));
         return _details::make_writer(
-            Semigroup<LogType>().combine(fl::util::move_if_possible(_log), fl::util::move_if_possible(w._log)),
-            fl::util::move_if_possible(w._value)
+            Semigroup<LogType>().combine(fl::util::move_if_possible(log_), fl::util::move_if_possible(w.log_)),
+            fl::util::move_if_possible(w.value_)
         );
     }
 
@@ -312,49 +312,49 @@ struct Writer {
     template<class FunctionLikeValue>
     constexpr auto apply(const Writer<LogType, FunctionLikeValue> &w) const &
     requires _concepts::WithSemigroup<LogType> {
-        return _details::make_writer(Semigroup<LogType>().combine(w._log, _log), std::invoke(w._value, _value));
+        return _details::make_writer(Semigroup<LogType>().combine(w.log_, log_), std::invoke(w.value_, value_));
     }
 
     template<class FunctionLikeValue>
     constexpr auto apply(Writer<LogType, FunctionLikeValue> &&w) const &
     requires _concepts::WithSemigroup<LogType> {
-        return _details::make_writer(Semigroup<LogType>().combine(fl::util::move_if_possible(w._log), _log),
-                                     std::invoke(fl::util::move_if_possible(w._value), _value));
+        return _details::make_writer(Semigroup<LogType>().combine(fl::util::move_if_possible(w.log_), log_),
+                                     std::invoke(fl::util::move_if_possible(w.value_), value_));
     }
 
     template<class FunctionLikeValue>
     constexpr auto apply(Writer<LogType, FunctionLikeValue> &&w) &&
     requires _concepts::WithSemigroup<LogType> {
-        return _details::make_writer(Semigroup<LogType>().combine(fl::util::move_if_possible(w._log), fl::util::move_if_possible(_log)),
-                                     std::invoke(fl::util::move_if_possible(w._value), fl::util::move_if_possible(_value)));
+        return _details::make_writer(Semigroup<LogType>().combine(fl::util::move_if_possible(w.log_), fl::util::move_if_possible(log_)),
+                                     std::invoke(fl::util::move_if_possible(w.value_), fl::util::move_if_possible(value_)));
     }
 
     template<class FunctionLikeValue>
     constexpr auto apply(Writer<LogType, FunctionLikeValue> &&w) const &&
     requires _concepts::WithSemigroup<LogType> {
-        return _details::make_writer(Semigroup<LogType>().combine(fl::util::move_if_possible(w._log), fl::util::move_if_possible(_log)),
-                                     std::invoke(fl::util::move_if_possible(w._value), fl::util::move_if_possible(_value)));
+        return _details::make_writer(Semigroup<LogType>().combine(fl::util::move_if_possible(w.log_), fl::util::move_if_possible(log_)),
+                                     std::invoke(fl::util::move_if_possible(w.value_), fl::util::move_if_possible(value_)));
     }
 
     template<class FunctionLikeValue>
     constexpr auto apply(const Writer<LogType, FunctionLikeValue> &w) &&
     requires _concepts::WithSemigroup<LogType> {
-        return _details::make_writer(Semigroup<LogType>().combine(w._log, fl::util::move_if_possible(_log)),
-                                     std::invoke(w._value, fl::util::move_if_possible(_value)));
+        return _details::make_writer(Semigroup<LogType>().combine(w.log_, fl::util::move_if_possible(log_)),
+                                     std::invoke(w.value_, fl::util::move_if_possible(value_)));
     }
 
     template<class FunctionLikeValue>
     constexpr auto apply(const Writer<LogType, FunctionLikeValue> &w) const &&
     requires _concepts::WithSemigroup<LogType> {
-        return _details::make_writer(Semigroup<LogType>().combine(w._log, fl::util::move_if_possible(_log)),
-                                     std::invoke(w._value, fl::util::move_if_possible(_value)));
+        return _details::make_writer(Semigroup<LogType>().combine(w.log_, fl::util::move_if_possible(log_)),
+                                     std::invoke(w.value_, fl::util::move_if_possible(value_)));
     }
 
     auto operator<=> (const Writer&) const = default;
     bool operator== (const Writer&) const = default;
 
-    LogType _log;
-    ValueType _value;
+    LogType log_;
+    ValueType value_;
 };
 
 } // namespace fl
