@@ -70,11 +70,6 @@ struct Writer {
     using ValueType = std::remove_cvref_t<Value>;
 
     Writer() = default;
-    Writer(const Writer &) = default;
-    Writer(Writer &&) noexcept = default;
-
-    Writer &operator=(const Writer &) = default;
-    Writer &operator=(Writer &&) noexcept = default;
 
     Writer(const Log &l, const Value &v) : _log(l), _value(v) {}
 

@@ -22,6 +22,7 @@ target_sources(tests PRIVATE
     test_move_if_possible.cpp
     test_lazy_syntax.cpp
     writer_default_types.hpp
+    test_writer_move_copy.cpp
 )
 
 target_compile_features(tests PRIVATE cxx_std_23)
