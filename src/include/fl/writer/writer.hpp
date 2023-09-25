@@ -249,11 +249,11 @@ struct Writer {
     }
 
     constexpr auto as_tuple() && {
-        return std::make_tuple(fl::util::move_if_possible(log_), fl::util::move_if_possible(value_));
+        return std::make_tuple(std::move(log_), std::move(value_));
     }
 
     constexpr auto as_tuple() const && {
-        return std::make_tuple(fl::util::move_if_possible(log_), fl::util::move_if_possible(value_));
+        return std::make_tuple(std::move(log_), std::move(value_));
     }
 
     /*!
