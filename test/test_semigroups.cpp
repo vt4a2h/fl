@@ -37,10 +37,35 @@ TEST_CASE("Combine") {
         REQUIRE(s.combine(1., s.combine(2., 3.)) == s.combine(s.combine(1., 2.), 3.));
     }
 
-    SECTION("Vector") {
-        fl::Semigroup<std::vector<int>> s;
+    SECTION("Vector tmp") {
+        fl::Semigroup<std::vector<std::string>> s;
 
-        REQUIRE(s.combine(std::vector<int>{1, 2, 3}, std::vector<int>{4, 5, 6}) == std::vector<int>{1, 2, 3, 4, 5, 6});
+        REQUIRE(s.combine(std::vector<std::string>{"1", "2","3"}, std::vector<std::string>{"4", "5", "6"}) ==
+                          std::vector<std::string>{"1", "2", "3", "4", "5", "6"});
+    }
+
+    SECTION("Vector const") {
+        fl::Semigroup<std::vector<std::string>> s;
+
+        const std::vector<std::string> v1{"1", "2", "3"};
+        const std::vector<std::string> v2{"4", "5", "6"};
+        REQUIRE(s.combine(v1, v2) == std::vector<std::string>{"1", "2", "3", "4", "5", "6"});
+    }
+
+    SECTION("Vector const-tmp") {
+        fl::Semigroup<std::vector<std::string>> s;
+
+        const std::vector<std::string> v1{"1", "2", "3"};
+        REQUIRE(s.combine(v1, std::vector<std::string>{"4", "5", "6"}) ==
+                std::vector<std::string>{"1", "2", "3", "4", "5", "6"});
+    }
+
+    SECTION("Vector tmp-const") {
+        fl::Semigroup<std::vector<std::string>> s;
+
+        std::vector<std::string> v2{"4", "5", "6"};
+        REQUIRE(s.combine(std::vector<std::string>{"1", "2","3"}, v2) ==
+            std::vector<std::string>{"1", "2", "3", "4", "5", "6"});
     }
 
     SECTION("Set") {
@@ -50,7 +75,7 @@ TEST_CASE("Combine") {
         REQUIRE(s.combine(std::set<int>{1, 2, 3}, std::set<int>{1, 4, 5, 6}) == std::set<int>{1, 2, 3, 4, 5, 6});
     }
 
-    SECTION("Vector wit element") {
+    SECTION("Vector with element") {
         fl::Semigroup<std::vector<int>> s;
 
         REQUIRE(s.combine(std::vector<int>{1, 2, 3}, 4) == std::vector<int>{1, 2, 3, 4});
