@@ -47,29 +47,12 @@ decltype(auto) combineImpl(Containers &&...containers)
 
 template<concepts::PushableContainer T>
 struct Semigroup<T> {
-    [[nodiscard]]
-    T combine(const T &v1, const T &v2) const {
-        return details::combineImpl(v1, v2);
+    [[nodiscard]] T combine(concepts::SameContainer<T> auto&& v1, concepts::SameContainer<T> auto&& v2) const {
+        return details::combineImpl(std::forward<decltype(v1)>(v1), std::forward<decltype(v2)>(v2));
     }
 
-    [[nodiscard]]
-    T combine(T&& v1, T&& v2) const {
-        return details::combineImpl(std::move(v1), std::move(v2));
-    }
-
-    [[nodiscard]]
-    T combine(const T &v1, T&& v2) const {
-        return details::combineImpl(v1, std::move(v2));
-    }
-
-    [[nodiscard]]
-    T combine(T &&v1, const T& v2) const {
-        return details::combineImpl(std::move(v1), v2);
-    }
-
-    template<concepts::SameContainer<T> Container, concepts::SameElementType<Container> Value>
-    [[nodiscard]] decltype(auto) combine(Container container, Value &&value) const {
-        container.emplace_back(std::forward<Value>(value));
+    [[nodiscard]] T combine(concepts::SameContainer<T> auto container, concepts::SameElementType<T> auto &&value) const {
+        container.push_back(std::forward<decltype(value)>(value));
         return container;
     }
 };
