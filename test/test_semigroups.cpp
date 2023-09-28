@@ -63,7 +63,7 @@ TEST_CASE("Combine") {
     SECTION("Vector tmp-const") {
         fl::Semigroup<std::vector<std::string>> s;
 
-        std::vector<std::string> v2{"4", "5", "6"};
+        const std::vector<std::string> v2{"4", "5", "6"};
         REQUIRE(s.combine(std::vector<std::string>{"1", "2","3"}, v2) ==
             std::vector<std::string>{"1", "2", "3", "4", "5", "6"});
     }

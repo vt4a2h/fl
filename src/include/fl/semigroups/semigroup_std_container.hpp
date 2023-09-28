@@ -21,14 +21,13 @@ namespace fl {
 namespace details {
 
 template <class ...Containers>
-inline constexpr bool same_as_v = (... && std::is_same_v<
-    std::remove_cvref_t<std::tuple_element_t<0, std::tuple<Containers...>>>,
-    std::remove_cvref_t<Containers>
->);
+inline constexpr bool all_same = sizeof...(Containers) == 0
+    || (... && std::is_same_v<std::remove_cvref_t<std::tuple_element_t<0, std::tuple<Containers...>>>,
+                              std::remove_cvref_t<Containers>>);
 
 template <class ...Containers>
 decltype(auto) combineImpl(Containers &&...containers)
-    requires (sizeof...(containers) > 0 && same_as_v<Containers...>)
+    requires (sizeof...(containers) > 0 && all_same<Containers...>)
 {
     std::remove_cvref_t<std::tuple_element_t<0, std::tuple<Containers...>>> r;
     r.reserve((... + containers.size()));
