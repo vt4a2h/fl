@@ -14,20 +14,20 @@
 
 TEST_CASE("Writer method tell") {
     SECTION("Add a single entity for empty logger") {
-        REQUIRE(Logger{}.tell({"foo"}).log() == Log{"foo"});
+        REQUIRE(Logger{}.tell("foo").log() == Log{"foo"});
     }
 
     SECTION("Combine several entries") {
-        REQUIRE(Logger{}.tell({"foo"}).tell({"bar"}).log() == Log{"foo", "bar"});
+        REQUIRE(Logger{}.tell("foo").tell("bar").log() == Log{"foo", "bar"});
     }
 
     SECTION("Not change value") {
-        REQUIRE(Logger{{}, 1}.tell({"foo"}).tell({"bar"}).value() == 1);
+        REQUIRE(Logger{{}, 1}.tell("foo").tell("bar").value() == 1);
     }
 
     SECTION("From regular value") {
         const auto l = Logger{};
-        REQUIRE(l.tell({"foo"}).log() == Log{"foo"});
+        REQUIRE(l.tell("foo").log() == Log{"foo"});
     }
 
     SECTION("From moved value") {

@@ -18,6 +18,9 @@ namespace fl {
 template<class Log, class Value>
 struct Writer;
 
+template<class V>
+struct Semigroup;
+
 } // namespace fl
 
 namespace fl::concepts {
@@ -39,6 +42,16 @@ template<class S, class Container, class Value>
 concept CombinableWithValue = requires(S s, Container &&v1, Value &&v2) {
     { s.combine(std::forward<Container>(v1), std::forward<Value>(v2)) } -> std::same_as<std::remove_cvref_t<Container>>;
 };
+
+template <class V>
+concept WithSemigroup = requires { Semigroup<V>(); };
+
+template <class TellEntry, class WriterLogType>
+concept ValidTellEntry =
+    WithSemigroup<WriterLogType> &&
+    (CombinableWithValue<Semigroup<WriterLogType>, WriterLogType, std::remove_cvref_t<TellEntry>> ||
+     std::is_same_v<std::remove_cvref_t<TellEntry>, std::remove_cvref_t<WriterLogType>> ||
+     std::is_constructible_v<std::remove_cvref_t<WriterLogType>, std::remove_cvref_t<TellEntry>>);
 
 template <class W>
 concept IsWriter = std::same_as<

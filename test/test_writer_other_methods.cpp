@@ -55,7 +55,7 @@ TEST_CASE("Writer other methods") {
     }
 
     SECTION("reset") {
-        const auto logger = Logger{{}, 1}.tell({"foo"});
+        const auto logger = Logger{Log{}, 1}.tell("foo");
         REQUIRE(logger.reset().log().empty());
     }
 }

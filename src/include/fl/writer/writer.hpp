@@ -32,8 +32,6 @@ namespace _details {
 }
 
 namespace _concepts {
-template <class V>
-concept WithSemigroup = requires { Semigroup<V>(); };
 
 template <class V>
 concept WithMonoid = requires { Monoid<V>(); };
@@ -111,41 +109,17 @@ struct Writer {
      * @param l a log entry to add.
      * @return a copy of the object with the same value and combined logs.
      */
-    constexpr auto tell(LogType &&l) const &
-    requires _concepts::WithSemigroup<LogType> {
-        return _details::make_writer(Semigroup<LogType>{}.combine(log_, std::move(l)), value_);
+    constexpr auto tell(concepts::ValidTellEntry<LogType> auto &&l) const & {
+        return _details::make_writer(Semigroup<LogType>{}.combine(log_, std::forward<decltype(l)>(l)), value_);
     }
 
-    constexpr auto tell(const LogType &l) const &
-    requires _concepts::WithSemigroup<LogType> {
-        return _details::make_writer(Semigroup<LogType>{}.combine(log_, l), value_);
-    }
-
-    constexpr auto tell(LogType &&l) &&
-    requires _concepts::WithSemigroup<LogType> {
-        return _details::make_writer(
-            Semigroup<LogType>{}.combine(std::move(log_), std::move(l)),
-            std::move(value_)
-        );
-    }
-
-    constexpr auto tell(const LogType &l) &&
-    requires _concepts::WithSemigroup<LogType> {
-        return _details::make_writer(Semigroup<LogType>{}.combine(std::move(log_), l),
+    constexpr auto tell(concepts::ValidTellEntry<LogType> auto &&l) && {
+        return _details::make_writer(Semigroup<LogType>{}.combine(std::move(log_), std::forward<decltype(l)>(l)),
                                      std::move(value_));
     }
 
-    constexpr auto tell(LogType &&l) const &&
-    requires _concepts::WithSemigroup<LogType> {
-        return _details::make_writer(
-            Semigroup<LogType>{}.combine(std::move(log_), std::move(l)),
-            std::move(value_)
-        );
-    }
-
-    constexpr auto tell(const LogType &l) const &&
-    requires _concepts::WithSemigroup<LogType> {
-        return _details::make_writer(Semigroup<LogType>{}.combine(std::move(log_), l),
+    constexpr auto tell(concepts::ValidTellEntry<LogType> auto &&l) const && {
+        return _details::make_writer(Semigroup<LogType>{}.combine(std::move(log_), std::forward<decltype(l)>(l)),
                                      std::move(value_));
     }
 
@@ -172,21 +146,6 @@ struct Writer {
 
     constexpr auto tell(LogType &&l, const SemigroupWrapper<LogType> &sg) const && {
         return _details::make_writer(sg.combine(std::move(log_), std::move(l)),
-                                     std::move(value_));
-    }
-
-    template<class LogEntry>
-    requires _concepts::WithSemigroup<LogType> &&
-              concepts::CombinableWithValue<Semigroup<LogType>, LogType, std::remove_cvref_t<LogEntry>>
-    constexpr auto tell(LogEntry &&l) const & {
-        return _details::make_writer(Semigroup<LogType>{}.combine(log_, std::forward<LogEntry>(l)), value_);
-    }
-
-    template<class LogEntry>
-    requires _concepts::WithSemigroup<LogType> &&
-             concepts::CombinableWithValue<Semigroup<LogType>, LogType, std::remove_cvref_t<LogEntry>>
-    constexpr auto tell(LogEntry &&l) && {
-        return _details::make_writer(Semigroup<LogType>{}.combine(std::move(log_), std::forward<LogEntry>(l)),
                                      std::move(value_));
     }
 
@@ -273,7 +232,7 @@ struct Writer {
      * @return a new writer object.
      */
     constexpr auto and_then(concepts::InvocableAndReturnsWriter<ValueType> auto f) const &
-    requires _concepts::WithSemigroup<LogType> {
+    requires concepts::WithSemigroup<LogType> {
         auto &&w = std::invoke(f, value_);
         return _details::make_writer(
             Semigroup<LogType>().combine(log_, std::move(w.log_)),
@@ -282,7 +241,7 @@ struct Writer {
     }
 
     constexpr auto and_then(concepts::InvocableAndReturnsWriter<ValueType> auto f) &&
-    requires _concepts::WithSemigroup<LogType> {
+    requires concepts::WithSemigroup<LogType> {
         auto &&w = std::invoke(f, std::move(value_));
         return _details::make_writer(
             Semigroup<LogType>().combine(std::move(log_), std::move(w.log_)),
@@ -291,7 +250,7 @@ struct Writer {
     }
 
     constexpr auto and_then(concepts::InvocableAndReturnsWriter<ValueType> auto f) const &&
-    requires _concepts::WithSemigroup<LogType> {
+    requires concepts::WithSemigroup<LogType> {
         auto &&w = std::invoke(f, std::move(value_));
         return _details::make_writer(
             Semigroup<LogType>().combine(std::move(log_), std::move(w.log_)),
@@ -310,41 +269,41 @@ struct Writer {
      */
     template<class FunctionLikeValue>
     constexpr auto apply(const Writer<LogType, FunctionLikeValue> &w) const &
-    requires _concepts::WithSemigroup<LogType> {
+    requires concepts::WithSemigroup<LogType> {
         return _details::make_writer(Semigroup<LogType>().combine(w.log_, log_), std::invoke(w.value_, value_));
     }
 
     template<class FunctionLikeValue>
     constexpr auto apply(Writer<LogType, FunctionLikeValue> &&w) const &
-    requires _concepts::WithSemigroup<LogType> {
+    requires concepts::WithSemigroup<LogType> {
         return _details::make_writer(Semigroup<LogType>().combine(std::move(w.log_), log_),
                                      std::invoke(std::move(w.value_), value_));
     }
 
     template<class FunctionLikeValue>
     constexpr auto apply(Writer<LogType, FunctionLikeValue> &&w) &&
-    requires _concepts::WithSemigroup<LogType> {
+    requires concepts::WithSemigroup<LogType> {
         return _details::make_writer(Semigroup<LogType>().combine(std::move(w.log_), std::move(log_)),
                                      std::invoke(std::move(w.value_), std::move(value_)));
     }
 
     template<class FunctionLikeValue>
     constexpr auto apply(Writer<LogType, FunctionLikeValue> &&w) const &&
-    requires _concepts::WithSemigroup<LogType> {
+    requires concepts::WithSemigroup<LogType> {
         return _details::make_writer(Semigroup<LogType>().combine(std::move(w.log_), std::move(log_)),
                                      std::invoke(std::move(w.value_), std::move(value_)));
     }
 
     template<class FunctionLikeValue>
     constexpr auto apply(const Writer<LogType, FunctionLikeValue> &w) &&
-    requires _concepts::WithSemigroup<LogType> {
+    requires concepts::WithSemigroup<LogType> {
         return _details::make_writer(Semigroup<LogType>().combine(w.log_, std::move(log_)),
                                      std::invoke(w.value_, std::move(value_)));
     }
 
     template<class FunctionLikeValue>
     constexpr auto apply(const Writer<LogType, FunctionLikeValue> &w) const &&
-    requires _concepts::WithSemigroup<LogType> {
+    requires concepts::WithSemigroup<LogType> {
         return _details::make_writer(Semigroup<LogType>().combine(w.log_, std::move(log_)),
                                      std::invoke(w.value_, std::move(value_)));
     }
