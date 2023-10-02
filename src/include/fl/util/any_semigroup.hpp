@@ -17,19 +17,25 @@
 namespace fl
 {
 
+namespace details
+{
+template<class FirstLog, class SecondLog>
+concept PureSame = std::is_same_v<std::remove_cvref_t<FirstLog>, std::remove_cvref_t<SecondLog>>;
+
+}
+
 template<class Log>
 struct SemigroupWrapper
 {
-    template<fl::concepts::IsProbablySemigroup T>
-    explicit SemigroupWrapper(T &&semigroupImpl)
-        : semigroupModel(std::make_unique<SemigroupModel<decltype(semigroupImpl)>>(
-            std::forward<decltype(semigroupImpl)>(semigroupImpl)))
+    template<class SemigroupImpl>
+    SemigroupWrapper(SemigroupImpl &&semigroupImpl) // NOLINT
+    requires (fl::concepts::IsProbablySemigroup<SemigroupImpl> &&
+              !std::is_same_v<std::remove_cvref_t<SemigroupImpl>, SemigroupWrapper<Log>>)
+        : semigroupModel(std::make_unique<SemigroupModel<SemigroupImpl>>(std::forward<SemigroupImpl>(semigroupImpl)))
     {}
 
-    Log combine(const Log &l1, const Log &l2) const { return semigroupModel->combineImpl(l1, l2); }
-    Log combine(const Log &l1, Log &&l2) const { return semigroupModel->combineImpl(l1, std::move(l2)); }
-    Log combine(Log &&l1, const Log &l2) const { return semigroupModel->combineImpl(std::move(l1), l2); }
-    Log combine(Log &&l1, Log &&l2) const { return semigroupModel->combineImpl(std::move(l1), std::move(l2)); }
+    Log combine(details::PureSame<Log> auto &&l1, details::PureSame<Log> auto &&l2) const
+    { return semigroupModel->combineImpl(std::forward<decltype(l1)>(l1), std::forward<decltype(l2)>(l2)); }
 
     struct SemigroupConcept
     {
@@ -43,8 +49,8 @@ struct SemigroupWrapper
     template<fl::concepts::IsProbablySemigroup SemigroupImpl>
     struct SemigroupModel final: SemigroupConcept
     {
-        explicit SemigroupModel(const SemigroupImpl& si) : semigroupImpl(si) {}
-        explicit SemigroupModel(SemigroupImpl&& si) : semigroupImpl(std::move(si)) {}
+        SemigroupModel(details::PureSame<SemigroupImpl> auto &&si) // NOLINT
+            : semigroupImpl(std::forward<decltype(si)>(si)) {}
 
         Log combineImpl(const Log &l1, const Log &l2) const override { return semigroupImpl.combine(l1, l2); }
         Log combineImpl(const Log &l1, Log &&l2) const override { return semigroupImpl.combine(l1, std::move(l2)); }

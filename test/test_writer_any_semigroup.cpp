@@ -57,7 +57,7 @@ TEST_CASE("Writer with any semigroup") {
     using ValueType = int;
     using StringLogger = fl::Writer<LogType, ValueType>;
 
-    const auto sg = fl::SemigroupWrapper<LogType>(test_any_semigroup::SemigroupString());
+    const auto sg = test_any_semigroup::SemigroupString();
 
     SECTION("Temporary writer and string") {
         REQUIRE(StringLogger{"foo", 1}.tell("bar", sg).log() == std::string("foobar"));
