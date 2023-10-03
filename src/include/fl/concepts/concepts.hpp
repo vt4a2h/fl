@@ -21,9 +21,30 @@ struct Writer;
 template<class V>
 struct Semigroup;
 
+template<class V>
+struct SemigroupWrapper;
+
 } // namespace fl
 
 namespace fl::concepts {
+
+template <class Arg, class Type>
+concept SameOrConstructable =
+    std::is_same_v<std::remove_cvref_t<Arg>, std::remove_cvref_t<Type>> ||
+    std::is_constructible_v<std::remove_cvref_t<Type>, std::remove_cvref_t<Arg>>;
+
+namespace details {
+
+template<class S, class Container, class Value>
+concept CombinableWithValue = requires(S s, Container &&v1, Value &&v2) {
+    { s.combine(std::forward<Container>(v1), std::forward<Value>(v2)) } -> std::same_as<std::remove_cvref_t<Container>>;
+};
+
+template <class TellEntry, class WriterLogType, class Sg>
+concept CombinableWithSg =
+    CombinableWithValue<Sg, WriterLogType, std::remove_cvref_t<TellEntry>> || SameOrConstructable<TellEntry, WriterLogType>;
+
+} // details
 
 template<class F, class Arg>
 concept Invocable = std::is_invocable_v<F, Arg>;
@@ -38,20 +59,14 @@ concept IsProbablySemigroup = requires(S s, V &&v1, V &&v2) {
     { s.combine(std::forward<V>(v1), std::forward<V>(v2)) } -> std::same_as<std::remove_cvref_t<V>>;
 };
 
-template<class S, class Container, class Value>
-concept CombinableWithValue = requires(S s, Container &&v1, Value &&v2) {
-    { s.combine(std::forward<Container>(v1), std::forward<Value>(v2)) } -> std::same_as<std::remove_cvref_t<Container>>;
-};
-
 template <class V>
 concept WithSemigroup = requires { Semigroup<V>(); };
 
 template <class TellEntry, class WriterLogType>
-concept ValidTellEntry =
-    WithSemigroup<WriterLogType> &&
-    (CombinableWithValue<Semigroup<WriterLogType>, WriterLogType, std::remove_cvref_t<TellEntry>> ||
-     std::is_same_v<std::remove_cvref_t<TellEntry>, std::remove_cvref_t<WriterLogType>> ||
-     std::is_constructible_v<std::remove_cvref_t<WriterLogType>, std::remove_cvref_t<TellEntry>>);
+concept ValidTellEntry = WithSemigroup<WriterLogType> && details::CombinableWithSg<TellEntry, WriterLogType, Semigroup<WriterLogType>>;
+
+template <class TellEntry, class WriterLogType>
+concept CombinableWithSgWrapper = details::CombinableWithSg<TellEntry, WriterLogType, SemigroupWrapper<WriterLogType>>;
 
 template <class W>
 concept IsWriter = std::same_as<

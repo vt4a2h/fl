@@ -17,13 +17,6 @@
 namespace fl
 {
 
-namespace details
-{
-template<class FirstLog, class SecondLog>
-concept PureSame = std::is_same_v<std::remove_cvref_t<FirstLog>, std::remove_cvref_t<SecondLog>>;
-
-}
-
 template<class Log>
 struct SemigroupWrapper
 {
@@ -34,7 +27,7 @@ struct SemigroupWrapper
         : semigroupModel(std::make_unique<SemigroupModel<SemigroupImpl>>(std::forward<SemigroupImpl>(semigroupImpl)))
     {}
 
-    Log combine(details::PureSame<Log> auto &&l1, details::PureSame<Log> auto &&l2) const
+    Log combine(concepts::SameOrConstructable<Log> auto &&l1, concepts::SameOrConstructable<Log> auto &&l2) const
     { return semigroupModel->combineImpl(std::forward<decltype(l1)>(l1), std::forward<decltype(l2)>(l2)); }
 
     struct SemigroupConcept
@@ -49,7 +42,7 @@ struct SemigroupWrapper
     template<fl::concepts::IsProbablySemigroup SemigroupImpl>
     struct SemigroupModel final: SemigroupConcept
     {
-        SemigroupModel(details::PureSame<SemigroupImpl> auto &&si) // NOLINT
+        SemigroupModel(concepts::SameOrConstructable<SemigroupImpl> auto &&si) // NOLINT
             : semigroupImpl(std::forward<decltype(si)>(si)) {}
 
         Log combineImpl(const Log &l1, const Log &l2) const override { return semigroupImpl.combine(l1, l2); }

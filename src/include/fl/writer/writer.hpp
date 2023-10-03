@@ -123,30 +123,16 @@ struct Writer {
                                      std::move(value_));
     }
 
-    constexpr auto tell(const LogType &l, const SemigroupWrapper<LogType> &sg) const & {
-        return _details::make_writer(sg.combine(log_, l), value_);
+    constexpr auto tell(concepts::CombinableWithSgWrapper<LogType> auto &&l, const SemigroupWrapper<LogType> &sg) const & {
+        return _details::make_writer(sg.combine(log_, std::forward<decltype(l)>(l)), value_);
     }
 
-    constexpr auto tell(LogType &&l, const SemigroupWrapper<LogType> &sg) const & {
-        return _details::make_writer(sg.combine(log_, std::move(l)), value_);
+    constexpr auto tell(concepts::CombinableWithSgWrapper<LogType> auto &&l, const SemigroupWrapper<LogType> &sg) && {
+        return _details::make_writer(sg.combine(std::move(log_), std::forward<decltype(l)>(l)), std::move(value_));
     }
 
-    constexpr auto tell(const LogType &l, const SemigroupWrapper<LogType> &sg) && {
-        return _details::make_writer(sg.combine(std::move(log_), l), std::move(value_));
-    }
-
-    constexpr auto tell(LogType &&l, const SemigroupWrapper<LogType> &sg) && {
-        return _details::make_writer(sg.combine(std::move(log_), std::move(l)),
-                                     std::move(value_));
-    }
-
-    constexpr auto tell(const LogType &l, const SemigroupWrapper<LogType> &sg) const && {
-        return _details::make_writer(sg.combine(std::move(log_), l), std::move(value_));
-    }
-
-    constexpr auto tell(LogType &&l, const SemigroupWrapper<LogType> &sg) const && {
-        return _details::make_writer(sg.combine(std::move(log_), std::move(l)),
-                                     std::move(value_));
+    constexpr auto tell(concepts::CombinableWithSgWrapper<LogType> auto &&l, const SemigroupWrapper<LogType> &sg) const && {
+        return _details::make_writer(sg.combine(std::move(log_), std::forward<decltype(l)>(l)), std::move(value_));
     }
 
     /*!
