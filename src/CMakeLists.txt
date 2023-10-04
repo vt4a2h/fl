@@ -10,6 +10,8 @@ if (FL_DEV)
 
     if(NOT MSVC)
         target_compile_options(fl INTERFACE -Wall -Wextra -pedantic -Werror)
+    else ()
+        target_compile_options(fl INTERFACE /Wall /WX)
     endif()
 endif()
 
