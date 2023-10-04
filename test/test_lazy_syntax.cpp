@@ -62,7 +62,7 @@ TEST_CASE("Use lazy evaluation") {
     }
 
     SECTION("Tell operation for move-only objects") {
-        auto l = MoveOnlyLogger(NonCopyableString{"123"}, {});
+        auto l = MoveOnlyLogger{NonCopyableString{"123"}, {}};
         auto t = tell(NonCopyableString{"123"});
         auto w = std::move(l) | std::move(t); // Must move no copy ctor!
         auto r = (*w).log();
