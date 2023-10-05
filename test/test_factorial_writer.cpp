@@ -77,13 +77,13 @@ TEST_CASE("Factorial with writer") {
     const auto [description, factorialFunc] = descriptionAndFunc;
 
     SECTION(description) {
-        const auto maxFactorial = 5;
+        const Value maxFactorial = 5;
         const auto [log, result] = std::invoke(factorialFunc, maxFactorial);
 
         Value factorial = 1;
         for (Value i = 0; i <= maxFactorial; ++i) {
             factorial *= (i == 0 ? 1 : i);
-            REQUIRE(fmt::format("Factorial of {} is {}", i, factorial) == log[i]);
+            REQUIRE(fmt::format("Factorial of {} is {}", i, factorial) == log[static_cast<std::size_t>(i)]);
         }
         REQUIRE(result == factorial);
     }
