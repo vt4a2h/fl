@@ -20,6 +20,9 @@ namespace fl
 template<class Log>
 struct SemigroupWrapper
 {
+    SemigroupWrapper(SemigroupWrapper &&) = delete;
+    SemigroupWrapper& operator=(SemigroupWrapper &&) = delete;
+
     template<class SemigroupImpl>
     SemigroupWrapper(SemigroupImpl &&semigroupImpl) // NOLINT
     requires (fl::concepts::IsProbablySemigroup<SemigroupImpl> &&
