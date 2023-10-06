@@ -25,21 +25,45 @@ inline constexpr bool all_same = sizeof...(Containers) == 0
     || (... && std::is_same_v<std::remove_cvref_t<std::tuple_element_t<0, std::tuple<Containers...>>>,
                               std::remove_cvref_t<Containers>>);
 
-template <class ...Containers>
-decltype(auto) combineImpl(Containers &&...containers)
-    requires (sizeof...(containers) > 0 && all_same<Containers...>)
+void append(concepts::PushableContainer auto &r, concepts::PushableContainer auto &&c)
 {
-    std::remove_cvref_t<std::tuple_element_t<0, std::tuple<Containers...>>> r;
-    r.reserve((... + containers.size()));
-    ([&](auto &&c) {
-        if constexpr (std::is_rvalue_reference_v<decltype(c)>) {
-            std::move(std::begin(c), std::end(c), std::back_inserter(r));
-        } else {
-            std::copy(std::begin(c), std::end(c), std::back_inserter(r));
-        }
-    }(std::forward<Containers>(containers)), ...);
+    if constexpr (std::is_rvalue_reference_v<decltype(c)>) {
+        std::move(std::begin(c), std::end(c), std::back_inserter(r));
+    } else {
+        std::copy(std::begin(c), std::end(c), std::back_inserter(r));
+    }
+}
 
-    return r;
+void append(concepts::InsertableContainer auto &r, concepts::InsertableContainer auto &&c)
+{
+    if constexpr (std::is_rvalue_reference_v<decltype(c)>) {
+        r.insert(std::make_move_iterator(std::begin(c)), std::make_move_iterator(std::end(c)));
+    } else {
+        r.insert(std::begin(c), std::end(c));
+    }
+}
+
+void reserve(concepts::PushableContainer auto &r, std::size_t size)
+{
+    r.reserve(size);
+}
+
+void reserve(concepts::InsertableContainer auto &, std::size_t) {}
+
+auto combineImpl(concepts::PushableOrInsertableContainer auto &&f, concepts::PushableOrInsertableContainer auto &&s)
+    requires all_same<decltype(f), decltype(s)>
+{
+    if constexpr (std::is_rvalue_reference_v<decltype(f)>) {
+        reserve(f, f.size() + s.size());
+        append(f, std::forward<decltype(s)>(s));
+        return f;
+    } else {
+        std::remove_cvref_t<decltype(f)> r;
+        reserve(r, f.size() + s.size());
+        append(r, std::forward<decltype(f)>(f));
+        append(r, std::forward<decltype(s)>(s));
+        return r;
+    }
 }
 
 }
@@ -58,39 +82,13 @@ struct Semigroup<T> {
 
 template<concepts::InsertableContainer T>
 struct Semigroup<T> {
-    [[nodiscard]]
-    T combine(const T& v1, const T& v2) const {
-        T c;
-
-        c.insert(std::begin(v1), std::end(v1));
-        c.insert(std::begin(v2), std::end(v2));
-
-        return c;
+    [[nodiscard]] T combine(concepts::SameContainer<T> auto&& v1, concepts::SameContainer<T> auto&& v2) const {
+        return details::combineImpl(std::forward<decltype(v1)>(v1), std::forward<decltype(v2)>(v2));
     }
 
     [[nodiscard]]
-    T combine(T&& v1, T&& v2) const {
-        v1.insert(std::make_move_iterator(std::begin(v2)), std::make_move_iterator(std::end(v2)));
-        return v1;
-    }
-
-    [[nodiscard]]
-    T combine(const T &v1, T&& v2) const {
-        fl::concepts::InsertableContainer auto result = v1;
-        result.insert(std::end(result), std::make_move_iterator(std::begin(v2)), std::make_move_iterator(std::end(v2)));
-        return result;
-    }
-
-    [[nodiscard]]
-    T combine(T &&v1, const T& v2) const {
-        fl::concepts::InsertableContainer auto result = v2;
-        result.insert(std::end(result), std::make_move_iterator(std::begin(v1)), std::make_move_iterator(std::end(v1)));
-        return result;
-    }
-
-    template<concepts::SameContainer<T> Container, concepts::SameElementType<Container> Value>
-    [[nodiscard]] decltype(auto) combine(Container container, Value &&value) const {
-        container.insert(std::forward<Value>(value));
+    decltype(auto) combine(concepts::SameContainer<T> auto container, concepts::SameElementType<T> auto &&value) const {
+        container.insert(std::forward<decltype(value)>(value));
         return container;
     }
 };

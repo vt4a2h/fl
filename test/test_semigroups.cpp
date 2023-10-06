@@ -68,11 +68,35 @@ TEST_CASE("Combine") {
             std::vector<std::string>{"1", "2", "3", "4", "5", "6"});
     }
 
-    SECTION("Set") {
+    SECTION("Set tmp") {
         fl::Semigroup<std::set<int>> s;
 
         REQUIRE(s.combine(std::set<int>{1, 2, 3}, std::set<int>{4, 5, 6}) == std::set<int>{1, 2, 3, 4, 5, 6});
-        REQUIRE(s.combine(std::set<int>{1, 2, 3}, std::set<int>{1, 4, 5, 6}) == std::set<int>{1, 2, 3, 4, 5, 6});
+    }
+
+    SECTION("Set const") {
+        fl::Semigroup<std::set<int>> s;
+
+        const std::set<int> s1{1, 2, 3};
+        const std::set<int> s2{4, 5, 6};
+
+        REQUIRE(s.combine(s1, s2) == std::set<int>{1, 2, 3, 4, 5, 6});
+    }
+
+    SECTION("Set const-tmp") {
+        fl::Semigroup<std::set<int>> s;
+
+        const std::set<int> s1{1, 2, 3};
+
+        REQUIRE(s.combine(s1, std::set<int>{4, 5, 6}) == std::set<int>{1, 2, 3, 4, 5, 6});
+    }
+
+    SECTION("Set tmp-const") {
+        fl::Semigroup<std::set<int>> s;
+
+        const std::set<int> s2{4, 5, 6};
+
+        REQUIRE(s.combine(std::set<int>{1, 2, 3}, s2) == std::set<int>{1, 2, 3, 4, 5, 6});
     }
 
     SECTION("Vector with element") {

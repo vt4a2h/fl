@@ -105,19 +105,22 @@ concept StdContainer = requires(C c) {
 
 template<class Container>
 concept PushableContainer =
-StdContainer<Container> &&
-    requires(Container c, typename Container::value_type &&v) {
-        c.reserve(typename Container::size_type{});
+StdContainer<std::remove_cvref_t<Container>> &&
+    requires(std::remove_cvref_t<Container> c, typename std::remove_cvref_t<Container>::value_type &&v) {
+        c.reserve(typename std::remove_cvref_t<Container>::size_type{});
         c.push_back(v);
     };
 
 template<class Container>
 concept InsertableContainer =
-StdContainer<Container> &&
-    requires(Container c, typename Container::value_type v, typename Container::iterator it) {
+StdContainer<std::remove_cvref_t<Container>> &&
+    requires(std::remove_cvref_t<Container> c, typename std::remove_cvref_t<Container>::value_type v, typename std::remove_cvref_t<Container>::iterator it) {
         c.insert(v);
         c.insert(it, it);
     };
+
+template<class Container>
+concept PushableOrInsertableContainer = PushableContainer<Container> || InsertableContainer<Container>;
 
 template<class FirstContainer, class SecondContainer>
 concept SameContainer = std::is_same_v<std::remove_cvref_t<FirstContainer>, std::remove_cvref_t<SecondContainer>>;
