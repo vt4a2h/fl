@@ -23,6 +23,24 @@ TEST_CASE("Combine") {
         REQUIRE(s.combine("baz", s.combine("foo", "bar")) == s.combine(s.combine("baz", "foo"), "bar"));
     }
 
+    SECTION("String with view") {
+        fl::Semigroup<std::string> sg;
+
+        REQUIRE(sg.combine(std::string("foo"), std::string_view("bar")) == std::string("foobar"));
+    }
+
+    SECTION("String with char*") {
+        fl::Semigroup<std::string> sg;
+
+        REQUIRE(sg.combine(std::string("foo"), "bar") == std::string("foobar"));
+    }
+
+    SECTION("String with another string") {
+        fl::Semigroup<std::string> sg;
+
+        REQUIRE(sg.combine(std::string("foo"), std::string("bar")) == std::string("foobar"));
+    }
+
     SECTION("Int") {
         fl::Semigroup<int> s;
 
