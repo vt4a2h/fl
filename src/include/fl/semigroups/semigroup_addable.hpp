@@ -13,6 +13,7 @@
 #include <functional>
 #include <type_traits>
 
+#include <fl/concepts/concepts.hpp>
 #include <fl/semigroups/semigroup.hpp>
 
 namespace fl {
@@ -27,13 +28,8 @@ concept Addable = requires(T v1, T v2) {
 template<_concepts::Addable T>
 struct Semigroup<T> {
     [[nodiscard]]
-    T combine(const T& v1, const T& v2) const {
-        return v1 + v2;
-    }
-
-    [[nodiscard]]
-    T combine(T&& v1, T&& v2) const {
-        return v1 + v2;
+    T combine(concepts::Same<T> auto &&v1, concepts::Same<T> auto &&v2) const {
+        return std::forward<decltype(v1)>(v1) + std::forward<decltype(v2)>(v2);
     }
 };
 } // namespace fl

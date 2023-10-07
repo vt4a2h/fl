@@ -29,9 +29,11 @@ struct SemigroupWrapper;
 namespace fl::concepts {
 
 template <class Arg, class Type>
+concept Same = std::is_same_v<std::remove_cvref_t<Arg>, std::remove_cvref_t<Type>>;
+
+template <class Arg, class Type>
 concept SameOrConstructable =
-    std::is_same_v<std::remove_cvref_t<Arg>, std::remove_cvref_t<Type>> ||
-    std::is_constructible_v<std::remove_cvref_t<Type>, std::remove_cvref_t<Arg>>;
+    Same<Arg, Type> || std::is_constructible_v<std::remove_cvref_t<Type>, std::remove_cvref_t<Arg>>;
 
 namespace details {
 
