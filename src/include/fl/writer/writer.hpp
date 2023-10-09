@@ -230,45 +230,28 @@ struct Writer {
      * @param w another writer to compose.
      * @return a new writer contains combined logs and composed values.
      */
-    template<class FunctionLikeValue>
-    constexpr auto apply(const Writer<LogType, FunctionLikeValue> &w) const &
-    requires concepts::WithSemigroup<LogType> {
-        return Writer{Semigroup<LogType>().combine(w.log_, log_), std::invoke(w.value_, value_)};
+    template <concepts::WriterWithApplicative<Writer<LogType, ValueType>> AppWriter>
+    constexpr auto apply(AppWriter &&w) const & {
+        return Writer{
+            Semigroup<LogType>().combine(std::forward<AppWriter>(w).log(), log_),
+            std::invoke(std::forward<AppWriter>(w).value(), value_)
+        };
     }
 
-    template<class FunctionLikeValue>
-    constexpr auto apply(Writer<LogType, FunctionLikeValue> &&w) const &
-    requires concepts::WithSemigroup<LogType> {
-        return Writer{Semigroup<LogType>().combine(std::move(w.log_), log_),
-                                     std::invoke(std::move(w.value_), value_)};
+    template <concepts::WriterWithApplicative<Writer<LogType, ValueType>> AppWriter>
+    constexpr auto apply(AppWriter &&w) && {
+        return Writer{
+            Semigroup<LogType>().combine(std::forward<AppWriter>(w).log(), std::move(log_)),
+            std::invoke(std::forward<AppWriter>(w).value(), std::move(value_))
+        };
     }
 
-    template<class FunctionLikeValue>
-    constexpr auto apply(Writer<LogType, FunctionLikeValue> &&w) &&
-    requires concepts::WithSemigroup<LogType> {
-        return Writer{Semigroup<LogType>().combine(std::move(w.log_), std::move(log_)),
-                                     std::invoke(std::move(w.value_), std::move(value_))};
-    }
-
-    template<class FunctionLikeValue>
-    constexpr auto apply(Writer<LogType, FunctionLikeValue> &&w) const &&
-    requires concepts::WithSemigroup<LogType> {
-        return Writer{Semigroup<LogType>().combine(std::move(w.log_), std::move(log_)),
-                                     std::invoke(std::move(w.value_), std::move(value_))};
-    }
-
-    template<class FunctionLikeValue>
-    constexpr auto apply(const Writer<LogType, FunctionLikeValue> &w) &&
-    requires concepts::WithSemigroup<LogType> {
-        return Writer{Semigroup<LogType>().combine(w.log_, std::move(log_)),
-                                     std::invoke(w.value_, std::move(value_))};
-    }
-
-    template<class FunctionLikeValue>
-    constexpr auto apply(const Writer<LogType, FunctionLikeValue> &w) const &&
-    requires concepts::WithSemigroup<LogType> {
-        return Writer{Semigroup<LogType>().combine(w.log_, std::move(log_)),
-                                     std::invoke(w.value_, std::move(value_))};
+    template <concepts::WriterWithApplicative<Writer<LogType, ValueType>> AppWriter>
+    constexpr auto apply(AppWriter &&w) const && {
+        return Writer{
+            Semigroup<LogType>().combine(std::forward<AppWriter>(w).log(), std::move(log_)),
+            std::invoke(std::forward<AppWriter>(w).value(), std::move(value_))
+        };
     }
 
     auto operator<=> (const Writer&) const = default;

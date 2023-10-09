@@ -80,6 +80,13 @@ template<class F, class Arg>
 concept InvocableAndReturnsWriter =
     std::is_invocable_v<F, Arg> && IsWriter<std::invoke_result_t<F, Arg>>;
 
+template<class WA, class W>
+concept WriterWithApplicative = IsWriter<WA>
+    && IsWriter<W>
+    && SameOrConstructable<typename std::remove_cvref_t<WA>::LogType, typename std::remove_cvref_t<W>::LogType>
+    && std::is_invocable_v<typename std::remove_cvref_t<WA>::ValueType, typename std::remove_cvref_t<W>::ValueType>;
+;
+
 template <class C>
 concept StdContainer = requires(C c) {
     typename C::value_type;
