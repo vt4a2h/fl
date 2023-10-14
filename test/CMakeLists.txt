@@ -20,6 +20,7 @@ target_sources(tests PRIVATE
     test_writer_non_copyable.cpp
     test_lazy_syntax.cpp
     writer_default_types.hpp
+    writer_utility_types.hpp
     test_writer_move_copy.cpp
 )
 
