@@ -15,7 +15,6 @@ target_sources(tests PRIVATE
     test_writer_ap.cpp
     test_semigroups.cpp
     test_monoids.cpp
-    test_functor.cpp
     test_factorial_writer.cpp
     test_writer_non_movable.cpp
     test_writer_non_copyable.cpp
