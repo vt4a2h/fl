@@ -9,7 +9,7 @@
 // See LICENSE file for the further details.
 //
 #include <fl/concepts/concepts.hpp>
-#include <fl/util/any_semigroup.hpp>
+#include <fl/semigroups/any_semigroup.hpp>
 #include <fl/writer/writer.hpp>
 
 #include "catch.hpp"

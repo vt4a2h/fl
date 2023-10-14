@@ -16,7 +16,7 @@
 #include "fl/semigroups/semigroup.hpp"
 #include "fl/monoids/monoid.hpp"
 #include "fl/concepts/concepts.hpp"
-#include "fl/util/any_semigroup.hpp"
+#include "fl/semigroups/any_semigroup.hpp"
 
 namespace fl {
 
