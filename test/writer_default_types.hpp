@@ -12,6 +12,7 @@
 
 #include <vector>
 #include <string>
+#include <cstdint>
 
 #include <fl/writer/writer.hpp>
 #include <fl/semigroups/semigroup_std_container.hpp>
