@@ -7,11 +7,11 @@
   },
   "configurePresets": [
     {
-      "name": "clang-14",
+      "name": "clang-17",
       "generator": "Ninja",
       "cacheVariables": {
-        "CMAKE_C_COMPILER": "clang-14",
-        "CMAKE_CXX_COMPILER": "clang++-14"
+        "CMAKE_C_COMPILER": "clang-17",
+        "CMAKE_CXX_COMPILER": "clang++-17"
       },
       "condition": {
         "type": "notEquals",

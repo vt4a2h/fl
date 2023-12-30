@@ -7,7 +7,7 @@ jobs:
       matrix:
         os: [ubuntu-22.04]
         build_type: [Debug, Release]
-        preset: [gcc-12, clang-14]
+        preset: [gcc-12, clang-17]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Check out code
@@ -22,6 +22,11 @@ jobs:
         run: |
           sudo apt update || exit $?
           sudo apt -y install ninja-build || exit $?
+      - name: Install clang-17
+        run: |
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x ./llvm.sh
+          sudo ./llvm.sh 17
       - name: Configure
         run: |
           cmake -S . -B cmake-build --preset ${{ matrix.preset }} \
