@@ -22,6 +22,7 @@ target_sources(tests PRIVATE
     writer_default_types.hpp
     writer_utility_types.hpp
     test_writer_move_copy.cpp
+    test_utils_ap_optional.cpp
 )
 
 target_compile_features(tests PRIVATE cxx_std_23)
