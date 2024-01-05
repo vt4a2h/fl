@@ -27,6 +27,9 @@ constexpr bool is_optional<std::optional<T>> = true;
 template<class T>
 concept IsOptional = is_optional<std::remove_cvref_t<T>>;
 
+template<class T>
+concept NotOptional = !is_optional<std::remove_cvref_t<T>>;
+
 template<class V>
 constexpr auto pure(V &&v)
 {
@@ -40,9 +43,9 @@ constexpr auto pure(V &&v)
 
 } // namespace details
 
-template <class F, class ...Args>
+template <class F, details::NotOptional ...Args>
 constexpr auto ap(F &&f, Args &&...args) noexcept(noexcept(std::invoke(std::forward<F>(f), std::forward<Args>(args)...)))
-    requires (std::is_invocable_v<F, Args...>)
+    requires std::is_invocable_v<F, Args...>
 {
     return std::make_optional(std::invoke(std::forward<F>(f), std::forward<Args>(args)...));
 }
@@ -50,7 +53,6 @@ constexpr auto ap(F &&f, Args &&...args) noexcept(noexcept(std::invoke(std::forw
 template <class F, details::IsOptional ...Args>
 constexpr auto ap(F &&f, Args &&...args) noexcept(noexcept(ap(std::forward<F>(f), *std::forward<Args>(args)...)))
     -> decltype(ap(std::forward<F>(f), *std::forward<Args>(args)...))
-    requires (!std::is_invocable_v<F, Args...>)
 {
     if ((... && args)) {
         return ap(std::forward<F>(f), *std::forward<Args>(args)...);
@@ -63,7 +65,7 @@ template <class F, class ...Args>
 constexpr auto ap(F &&f, Args &&...args) noexcept(noexcept(ap(std::forward<F>(f), *details::pure(args)...)))
     requires (!std::is_invocable_v<F, Args...> && !(... && details::IsOptional<Args>))
 {
-    return ap(std::forward<F>(f), *details::pure(args)...);
+    return ap(std::forward<F>(f), details::pure(args)...);
 }
 
 } // namespace fl
