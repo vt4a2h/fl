@@ -1,3 +1,8 @@
+include(${CMAKE_SOURCE_DIR}/cmake/helpers.cmake)
+
+has_expected(HAS_EXPECTED_RESULT)
+message(STATUS "Has std::expected support: ${HAS_EXPECTED_RESULT}")
+
 find_package(Catch2 CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
