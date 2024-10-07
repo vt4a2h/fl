@@ -29,6 +29,7 @@ target_sources(tests PRIVATE
     test_writer_move_copy.cpp
     test_utils_ap_optional.cpp
     test_applicative_optional.cpp
+    test_expected_create.cpp
 )
 
 if (HAS_EXPECTED_RESULT)
