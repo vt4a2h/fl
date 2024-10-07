@@ -9,9 +9,10 @@
     {
       "name": "clang-17",
       "generator": "Ninja",
-      "cacheVariables": {
-        "CMAKE_C_COMPILER": "clang-17",
-        "CMAKE_CXX_COMPILER": "clang++-17"
+      "environment": {
+        "CC": "clang-17",
+        "CXX": "clang++-17",
+        "CXXFLAGS": "-stdlib=libc++"
       },
       "condition": {
         "type": "notEquals",
@@ -22,9 +23,10 @@
     {
       "name": "system-clang",
       "generator": "Ninja",
-      "cacheVariables": {
-        "CMAKE_C_COMPILER": "clang",
-        "CMAKE_CXX_COMPILER": "clang++"
+      "environment": {
+        "CC": "clang",
+        "CXX": "clang++",
+        "CXXFLAGS": "-stdlib=libc++"
       },
       "condition": {
         "type": "notEquals",

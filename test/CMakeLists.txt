@@ -28,7 +28,14 @@ target_sources(tests PRIVATE
     writer_utility_types.hpp
     test_writer_move_copy.cpp
     test_utils_ap_optional.cpp
+    test_applicative_optional.cpp
 )
+
+if (HAS_EXPECTED_RESULT)
+    target_sources(tests PRIVATE
+        test_utils_ap_expected.cpp
+    )
+endif ()
 
 target_compile_features(tests PRIVATE cxx_std_23)
 

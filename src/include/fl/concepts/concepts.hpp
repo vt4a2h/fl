@@ -12,6 +12,7 @@
 
 #include <concepts>
 #include <utility>
+#include <optional>
 
 namespace fl {
 
@@ -138,5 +139,14 @@ template<class Value, class Container>
 concept SameElementType =
     std::is_same_v<typename std::remove_cvref_t<Container>::value_type, std::remove_cvref_t<Value>> ||
         std::is_constructible_v<typename std::remove_cvref_t<Container>::value_type, std::remove_cvref_t<Value>>;
+
+template<typename>
+constexpr bool is_optional = false;
+
+template<typename T>
+constexpr bool is_optional<std::optional<T>> = true;
+
+template<class T>
+concept IsOptional = is_optional<std::remove_cvref_t<T>>;
 
 } // fl::concepts
