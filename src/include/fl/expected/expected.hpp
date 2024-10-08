@@ -14,50 +14,44 @@ struct Unexpected
 public: // Types
     using Error = Error_;
 
-    template<class E = Error_>
-    constexpr explicit Unexpected(E&& error)
-        requires (
-            !std::is_same_v<std::remove_cvref_t<E>, Unexpected> &&
-            !std::is_same_v<std::remove_cvref_t<E>, std::in_place_t> &&
-            std::is_constructible_v<E, Error>
-        )
-        : m_error(std::forward<E>(error))
+    template<class E_ = Error_>
+        requires
+            (!std::is_same_v<std::remove_cvref_t<E_>, Unexpected>) &&
+            (!std::is_same_v<std::remove_cvref_t<E_>, std::in_place_t>) &&
+            std::is_constructible_v<Error_, E_>
+    constexpr explicit Unexpected(E_&& error) noexcept(std::is_nothrow_constructible_v<E_, Error_>)
+        : m_error(std::forward<E_>(error))
     {}
 
     template<class... Args>
-    constexpr explicit Unexpected(std::in_place_t, Args&&... args )
         requires (std::is_constructible_v<Error_, Args...>)
-    : m_error(std::forward<Args>(args)...)
+    constexpr explicit Unexpected(std::in_place_t, Args&&... args )
+        noexcept(std::is_nothrow_constructible_v<Error_, Args...>)
+        : m_error(std::forward<Args>(args)...)
     {}
 
     template<class U, class... Args >
-    constexpr explicit Unexpected(std::in_place_t, std::initializer_list<U> il, Args&&... args )
         requires (std::is_constructible_v<Error_, std::initializer_list<U>&, Args...>)
+    constexpr explicit Unexpected(std::in_place_t, std::initializer_list<U> il, Args&&... args )
+        noexcept(std::is_nothrow_constructible_v<Error_, std::initializer_list<U>&, Args...>)
         : m_error(il, std::forward<Args>(args)...)
     {}
 
     constexpr Unexpected(const Unexpected&) = default;
     constexpr Unexpected(Unexpected&&) = default;
 
-    // TODO: looks cool but test how it works {
-//    constexpr const E& error() const& noexcept;
-//    constexpr E& error() & noexcept;
-//    constexpr const E&& error() const&& noexcept;
-//    constexpr E&& error() && noexcept;
+    constexpr const Error_& error() const& noexcept { return m_error; }
+    constexpr Error_& error() & noexcept { return m_error; }
 
-    template<class Self>
-    constexpr decltype(auto) error(this Self&& self)
-    {
-        return std::forward<Self>(self).m_error;
-    }
-    // }
+    constexpr const Error_&& error() const&& noexcept { return std::move(m_error); }
+    constexpr Error_&& error() && noexcept { return std::move(m_error); }
 
 private:
     Error_ m_error;
 };
 
 template <class Error_>
-Unexpected(Error_&& error) -> Unexpected<std::remove_cvref_t<Error_>>;
+Unexpected(Error_) -> Unexpected<Error_>;
 
 template <class Value_, class Error_>
 class Expected

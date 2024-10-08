@@ -30,6 +30,8 @@ target_sources(tests PRIVATE
     test_utils_ap_optional.cpp
     test_applicative_optional.cpp
     test_expected_create.cpp
+    test_expected_unexpected_create.cpp
+    test_expected_unexpected_access_error.cpp
 )
 
 if (HAS_EXPECTED_RESULT)
