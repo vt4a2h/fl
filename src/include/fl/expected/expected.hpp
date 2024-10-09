@@ -40,11 +40,11 @@ public: // Types
     constexpr Unexpected(const Unexpected&) = default;
     constexpr Unexpected(Unexpected&&) = default;
 
-    constexpr const Error_& error() const& noexcept { return m_error; }
-    constexpr Error_& error() & noexcept { return m_error; }
-
-    constexpr const Error_&& error() const&& noexcept { return std::move(m_error); }
-    constexpr Error_&& error() && noexcept { return std::move(m_error); }
+    template <class Self>
+    constexpr auto&& error(this Self&& self) noexcept
+    {
+        return std::forward<Self>(self).m_error;
+    }
 
 private:
     Error_ m_error;
