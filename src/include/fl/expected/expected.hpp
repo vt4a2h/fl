@@ -85,10 +85,14 @@ public: // Methods
         return hasValue();
     }
 
-    // TODO: more options
-    [[nodiscard]] constexpr Value_ value() const {
-        // TODO: check first
-        return std::get<Value_>(m_data);
+    template <class Self>
+        requires (!std::is_same_v<Value_, void>)
+    constexpr auto&& value(this Self&& self) noexcept {
+        // TODO: implement a handler {
+        assert(self.hasValue());
+        // }
+
+        return std::get<Value_>(std::forward<Self>(self).m_data);
     }
 
     [[nodiscard]] constexpr bool hasError() const {
