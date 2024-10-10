@@ -59,6 +59,7 @@ class Expected
 public: // Types
     using Value = Value_;
     using Error = Error_;
+    using Data = std::variant<Value, Error_>;
 
 public: // Methods
     constexpr Expected()
@@ -66,15 +67,43 @@ public: // Methods
     = default;
 
     template<class AnotherError>
-    constexpr explicit(!std::is_convertible_v<const AnotherError&, Error>) Expected(const Unexpected<AnotherError> &unexpected)
         requires (std::is_constructible_v<const AnotherError&, Error>)
+    constexpr explicit(!std::is_convertible_v<const AnotherError&, Error>) Expected(const Unexpected<AnotherError> &unexpected)
         : m_data(unexpected.error())
     {}
 
     template<class AnotherError>
+        requires (std::is_constructible_v<AnotherError, Error>)
     constexpr explicit(!std::is_convertible_v<AnotherError, Error>) Expected(Unexpected<AnotherError> &&unexpected)
-    requires (std::is_constructible_v<AnotherError, Error>)
         : m_data(std::move(unexpected).error())
+    {}
+
+    constexpr Expected(const Expected& other)
+        requires (std::is_copy_constructible_v<Data>)
+    = default;
+
+    constexpr Expected(Expected&& other) noexcept(std::is_nothrow_move_constructible_v<Data>)
+        requires (std::is_move_constructible_v<Data>)
+    = default;
+
+//    template< class U, class G >
+//    constexpr expected( const expected<U, G>& other );
+//
+//    template< class U, class G >
+//    constexpr expected( expected<U, G>&& other );
+
+    template <class OtherValue = Value_>
+        requires
+            (!std::is_same_v<std::remove_cvref_t<OtherValue>, std::in_place_t>) &&
+            (!std::is_same_v<std::expected<Value_, Error_>, std::remove_cvref_t<OtherValue>>) &&
+            std::is_constructible_v<Value_, OtherValue>
+            /* TODO:
+             * Add constraints:
+             * std::remove_cvref_t<U> is not a specialization of std::unexpected
+             * If T is (possibly cv-qualified) bool, std::remove_cvref_t<U> is not a specialization of std::expected.
+             */
+    constexpr explicit(!std::is_convertible_v<OtherValue, Value_>) Expected(OtherValue&& v)
+        : m_data(std::forward<OtherValue>(v))
     {}
 
     [[nodiscard]] constexpr bool hasValue() const {
@@ -106,8 +135,16 @@ public: // Methods
         return std::get<Error_>(m_data);
     }
 
+    template <class AnotherValue, class AnotherError>
+        requires (std::equality_comparable_with<typename Expected::Data,
+                                                typename Expected<AnotherError, AnotherValue>::Data>)
+    constexpr friend bool operator ==(const Expected &lhs, const Expected<AnotherError, AnotherValue> &rhs)
+    {
+        return lhs.m_data == rhs.m_data;
+    }
+
 private:
-    std::variant<Value, Error_> m_data;
+    Data m_data;
 };
 
 

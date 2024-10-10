@@ -20,6 +20,14 @@ struct Default {
     int data{default_value};
 };
 
+constexpr fl::Expected<int, std::string> createExpectedByMove()
+{
+    fl::Expected<int, std::string> expected(42);
+    fl::Expected<int, std::string> anotherExpected(std::move(expected));
+
+    return anotherExpected;
+}
+
 } // namespace test::details
 
 TEST_CASE("Expected create")
@@ -79,5 +87,38 @@ TEST_CASE("Expected create")
         static constexpr fl::Expected<int, std::string> expectedBox(unexpected);
 
         STATIC_REQUIRE(expectedBox.error() == string);
+    }
+
+    SECTION("Copy ctor")
+    {
+        fl::Expected<int, std::string> expected(42);
+        fl::Expected<int, std::string> anotherExpected(expected);
+
+        REQUIRE(expected == anotherExpected);
+    }
+
+    SECTION("[Constexpr] Copy ctor")
+    {
+        static constexpr fl::Expected<int, std::string> expected(42);
+        static constexpr fl::Expected<int, std::string> anotherExpected(expected);
+
+        STATIC_REQUIRE(expected == anotherExpected);
+    }
+
+    SECTION("Move ctor")
+    {
+        fl::Expected<int, std::string> expected(42);
+        fl::Expected<int, std::string> anotherExpected(expected);
+        fl::Expected<int, std::string> movedToExpected(std::move(anotherExpected));
+
+        REQUIRE(expected == movedToExpected);
+    }
+
+    SECTION("[Constexpr] Move ctor")
+    {
+        static constexpr fl::Expected<int, std::string> expected(42);
+        static constexpr auto createdExpected = test::details::createExpectedByMove();
+
+        STATIC_REQUIRE(expected == createdExpected);
     }
 }
