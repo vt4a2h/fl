@@ -118,10 +118,19 @@ public: // Methods
         requires (!std::is_same_v<Value_, void>)
     constexpr auto&& value(this Self&& self) noexcept {
         // TODO: implement a handler {
-        assert(self.hasValue());
+        // assert(self.hasValue());
         // }
 
         return std::get<Value_>(std::forward<Self>(self).m_data);
+    }
+
+    // TODO: requires certain ctors etc
+    template <class Self>
+    requires (std::is_same_v<Value_, void>)
+    constexpr void value(this Self&& self) noexcept {
+        // TODO: implement a handler {
+        // assert(self.hasValue());
+        // }
     }
 
     [[nodiscard]] constexpr bool hasError() const {
