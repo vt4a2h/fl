@@ -48,8 +48,8 @@ TEST_CASE("Access expected value")
     SECTION("[constexpr] By const ref")
     {
         static constexpr fl::Expected<int, std::string> expected(42);
-        static constexpr auto &error = expected.value();
+        static constexpr auto &value = expected.value();
 
-        STATIC_REQUIRE(error == 42);
+        STATIC_REQUIRE(value == 42);
     }
 }
