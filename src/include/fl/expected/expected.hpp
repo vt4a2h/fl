@@ -134,14 +134,16 @@ public: // Methods
     }
 
     [[nodiscard]] constexpr bool hasError() const {
-        // TODO: check first
         return std::holds_alternative<Error_>(m_data);
     }
 
-    // TODO: more options
-    [[nodiscard]] constexpr Error_ error() const {
-        // TODO: check first
-        return std::get<Error_>(m_data);
+    template <class Self>
+    constexpr auto&& error(this Self&& self) noexcept {
+        // TODO: implement a handler {
+        // assert(self.hasValue());
+        // }
+
+        return std::get<Error_>(std::forward<Self>(self).m_data);
     }
 
     template <class AnotherValue, class AnotherError>
