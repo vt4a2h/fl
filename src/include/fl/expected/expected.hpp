@@ -37,14 +37,22 @@ public: // Types
         : m_error(il, std::forward<Args>(args)...)
     {}
 
-    constexpr Unexpected(const Unexpected&) = default;
-    constexpr Unexpected(Unexpected&&) = default;
+    constexpr Unexpected(const Unexpected& src) noexcept(std::is_nothrow_copy_constructible_v<Error_>)
+        requires (std::is_copy_constructible_v<Error_>)
+        : m_error(src.m_error)
+    {}
+    constexpr Unexpected(Unexpected &&src) noexcept(std::is_nothrow_move_assignable_v<Error_>)
+        requires (std::is_move_constructible_v<Error_>)
+        : m_error(std::move(src.m_error))
+    {}
 
     template <class Self>
     constexpr auto&& error(this Self&& self) noexcept
     {
         return std::forward<Self>(self).m_error;
     }
+
+    constexpr auto operator<=>(const Unexpected&) const = default;
 
 private:
     Error_ m_error;
