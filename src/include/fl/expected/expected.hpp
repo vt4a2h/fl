@@ -70,23 +70,26 @@ public: // Types
     using Data = std::variant<Value, Error_>;
 
 public: // Methods
-    constexpr Expected()
+    constexpr Expected()  noexcept(std::is_nothrow_default_constructible_v<Value_>)
         requires (std::is_default_constructible_v<Value_>)
     = default;
 
     template<class AnotherError>
         requires (std::is_constructible_v<const AnotherError&, Error>)
     constexpr explicit(!std::is_convertible_v<const AnotherError&, Error>) Expected(const Unexpected<AnotherError> &unexpected)
+        noexcept (std::is_nothrow_convertible_v<const AnotherError&, Error>)
         : m_data(unexpected.error())
     {}
 
     template<class AnotherError>
         requires (std::is_constructible_v<AnotherError, Error>)
     constexpr explicit(!std::is_convertible_v<AnotherError, Error>) Expected(Unexpected<AnotherError> &&unexpected)
+        noexcept (std::is_nothrow_convertible_v<AnotherError, Error>)
         : m_data(std::move(unexpected).error())
     {}
 
     constexpr Expected(const Expected& other)
+        noexcept (std::is_nothrow_copy_constructible_v<Data>)
         requires (std::is_copy_constructible_v<Data>)
     = default;
 
@@ -111,6 +114,7 @@ public: // Methods
              * If T is (possibly cv-qualified) bool, std::remove_cvref_t<U> is not a specialization of std::expected.
              */
     constexpr explicit(!std::is_convertible_v<OtherValue, Value_>) Expected(OtherValue&& v)
+        noexcept (std::is_nothrow_constructible_v<Value_, OtherValue>)
         : m_data(std::forward<OtherValue>(v))
     {}
 
