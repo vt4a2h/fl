@@ -4,7 +4,36 @@
 
 namespace fl {
 
+template <class Value_, class Error_>
+class Expected;
+
+template <class Error_>
+struct Unexpected;
+
 namespace concepts {
+
+namespace details
+{
+
+template<class>
+constexpr bool is_expected = false;
+
+template<class V, class E>
+constexpr bool is_expected<fl::Expected<V, E>> = true;
+
+template<class>
+constexpr bool is_unexpected = false;
+
+template<class E>
+constexpr bool is_unexpected<fl::Unexpected<E>> = true;
+
+} // namespace details
+
+template<class T>
+concept IsExpected = details::is_expected<std::remove_cvref_t<T>>;
+
+template<class T>
+concept IsUnexpected = details::is_unexpected<std::remove_cvref_t<T>>;
 
 } // fl
 
@@ -70,7 +99,7 @@ public: // Types
     using Data = std::variant<Value, Error_>;
 
 public: // Methods
-    constexpr Expected()  noexcept(std::is_nothrow_default_constructible_v<Value_>)
+    constexpr Expected() noexcept(std::is_nothrow_default_constructible_v<Value_>)
         requires (std::is_default_constructible_v<Value_>)
     = default;
 
@@ -106,7 +135,7 @@ public: // Methods
     template <class OtherValue = Value_>
         requires
             (!std::is_same_v<std::remove_cvref_t<OtherValue>, std::in_place_t>) &&
-            (!std::is_same_v<std::expected<Value_, Error_>, std::remove_cvref_t<OtherValue>>) &&
+            (!std::is_same_v<Expected<Value_, Error_>, std::remove_cvref_t<OtherValue>>) &&
             std::is_constructible_v<Value_, OtherValue>
             /* TODO:
              * Add constraints:

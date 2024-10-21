@@ -34,6 +34,7 @@ target_sources(tests PRIVATE
     test_expected_unexpected_access_error.cpp
     test_expected_access_value.cpp
     test_expected_error.cpp
+    test_expected_traits.cpp
 )
 
 if (HAS_EXPECTED_RESULT)
