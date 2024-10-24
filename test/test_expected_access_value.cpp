@@ -52,4 +52,19 @@ TEST_CASE("Access expected value")
 
         STATIC_REQUIRE(value == 42);
     }
+
+    SECTION("Buy &&")
+    {
+        fl::Expected<int, std::string> expected(41);
+
+        STATIC_REQUIRE(std::same_as<decltype(std::move(expected).value()), int&&>);
+    }
+
+    SECTION("Buy const &&")
+    {
+        fl::Expected<int, std::string> expected(41);
+        const fl::Expected<int, std::string>&& tmpExpected = std::move(expected);
+
+        STATIC_REQUIRE(std::same_as<decltype(tmpExpected.value()), const int&>);
+    }
 }
