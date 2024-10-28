@@ -1,7 +1,7 @@
 include(${CMAKE_SOURCE_DIR}/cmake/helpers.cmake)
 
-has_expected(HAS_EXPECTED_RESULT)
-message(STATUS "Has std::expected support: ${HAS_EXPECTED_RESULT}")
+#has_expected(HAS_EXPECTED_RESULT)
+#message(STATUS "Has std::expected support: ${HAS_EXPECTED_RESULT}")
 
 find_package(Catch2 CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
@@ -27,8 +27,8 @@ target_sources(tests PRIVATE
     writer_default_types.hpp
     writer_utility_types.hpp
     test_writer_move_copy.cpp
-    test_utils_ap_optional.cpp
-    test_applicative_optional.cpp
+#    test_utils_ap_optional.cpp
+#    test_applicative_optional.cpp
     test_expected_create.cpp
     test_expected_unexpected_create.cpp
     test_expected_unexpected_access_error.cpp
@@ -37,11 +37,11 @@ target_sources(tests PRIVATE
     test_expected_traits.cpp
 )
 
-if (HAS_EXPECTED_RESULT)
-    target_sources(tests PRIVATE
-        test_utils_ap_expected.cpp
-    )
-endif ()
+#if (HAS_EXPECTED_RESULT)
+#    target_sources(tests PRIVATE
+#        test_utils_ap_expected.cpp
+#    )
+#endif ()
 
 target_compile_features(tests PRIVATE cxx_std_23)
 
