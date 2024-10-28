@@ -73,20 +73,20 @@ TEST_CASE("Expected create")
 
     SECTION("[Constexpr] From unexpected")
     {
-        static constexpr std::string string;
-        static constexpr auto unexpected = fl::Unexpected(string);
-        static constexpr fl::Expected<int, std::string> expectedBox(unexpected);
+        static constexpr std::string_view string_view{"42"};
+        static constexpr auto unexpected = fl::Unexpected(string_view);
+        static constexpr fl::Expected<int, std::string_view> expectedBox(unexpected);
 
         STATIC_REQUIRE(expectedBox.hasError());
     }
 
     SECTION("[Constexpr] From unexpected with correct value")
     {
-        static constexpr std::string string{"42"};
-        static constexpr auto unexpected = fl::Unexpected(string);
-        static constexpr fl::Expected<int, std::string> expectedBox(unexpected);
+        static constexpr std::string_view string_view{"42"};
+        static constexpr auto unexpected = fl::Unexpected(string_view);
+        static constexpr fl::Expected<int, std::string_view> expectedBox(unexpected);
 
-        STATIC_REQUIRE(expectedBox.error() == string);
+        STATIC_REQUIRE(expectedBox.error() == string_view);
     }
 
     SECTION("Copy ctor")

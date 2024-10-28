@@ -13,6 +13,9 @@
 #include <fl/expected/expected.hpp>
 
 #include <string>
+#include <optional>
+#include <ranges>
+#include <algorithm>
 
 constexpr fl::Unexpected<int> moveCtorConstexpr(int data)
 {
@@ -21,6 +24,15 @@ constexpr fl::Unexpected<int> moveCtorConstexpr(int data)
 
     return unexpectedMoved;
 }
+
+template <class T>
+struct SumIlVal
+{
+    constexpr SumIlVal(std::initializer_list<T> il, T val)
+        : sum (std::ranges::fold_left(il, val, std::plus<int>{}))
+    {}
+    T sum{};
+};
 
 TEST_CASE("Create unexpected")
 {
@@ -34,7 +46,7 @@ TEST_CASE("Create unexpected")
 
     SECTION("[Constexpr] From value")
     {
-        static constexpr std::string data{"42"};
+        static constexpr std::string_view data{"42"};
         static constexpr auto unexpected = fl::Unexpected(data);
 
         STATIC_REQUIRE(unexpected.error() == data);
@@ -58,10 +70,10 @@ TEST_CASE("Create unexpected")
 
     SECTION("Move ctor")
     {
-        auto unexpected = fl::Unexpected("42");
-        auto unexpectedMoved{std::move(unexpected)};
+        auto unexpected = fl::Unexpected<std::string_view>("42");
+        fl::Unexpected unexpectedMoved{std::move(unexpected)};
 
-        REQUIRE(fl::Unexpected("42") == unexpectedMoved);
+        REQUIRE(fl::Unexpected<std::string_view>("42") == unexpectedMoved);
     }
 
     SECTION("[Constexpr] Move ctor")
@@ -84,7 +96,7 @@ TEST_CASE("Create unexpected")
 
     SECTION("[Constexpr] From value in-place")
     {
-        static constexpr auto unexpected = fl::Unexpected<std::string>(std::in_place_t{}, "42");
+        static constexpr auto unexpected = fl::Unexpected<std::string_view>(std::in_place_t{}, "42");
 
         STATIC_REQUIRE(unexpected.error() == "42");
     }
@@ -98,8 +110,8 @@ TEST_CASE("Create unexpected")
 
     SECTION("[Constexpr] From value in-place with initializer list")
     {
-        static constexpr auto unexpected = fl::Unexpected<std::string>(std::in_place_t{}, {'4', '2'}, std::allocator<char>{});
+        static constexpr auto unexpected = fl::Unexpected<SumIlVal<int>>(std::in_place_t{}, {40}, 2);
 
-        REQUIRE(unexpected.error() == std::string{"42"});
+        STATIC_REQUIRE(unexpected.error().sum == 42);
     }
 }

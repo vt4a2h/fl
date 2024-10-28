@@ -184,10 +184,7 @@ public: // Methods
         return std::get<Error_>(std::forward<Self>(self).m_data);
     }
 
-    template <class AnotherValue, class AnotherError>
-        requires (std::equality_comparable_with<typename Expected::Data,
-                                                typename Expected<AnotherError, AnotherValue>::Data>)
-    constexpr friend bool operator ==(const Expected &lhs, const Expected<AnotherError, AnotherValue> &rhs)
+    constexpr friend bool operator ==(const Expected &lhs, const Expected &rhs)
     {
         return lhs.m_data == rhs.m_data;
     }
