@@ -5,9 +5,9 @@ jobs:
     name: Build ${{ matrix.os }} ${{ matrix.build_type }} with ${{ matrix.preset }}
     strategy:
       matrix:
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
         build_type: [Debug, Release]
-        preset: [gcc-12, clang-17]
+        preset: [gcc-14, clang-18]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Check out code

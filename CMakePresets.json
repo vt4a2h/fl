@@ -7,11 +7,11 @@
   },
   "configurePresets": [
     {
-      "name": "clang-17",
+      "name": "clang-18",
       "generator": "Ninja",
       "environment": {
-        "CC": "clang-17",
-        "CXX": "clang++-17",
+        "CC": "clang-18",
+        "CXX": "clang++-18",
         "CXXFLAGS": "-stdlib=libc++"
       },
       "condition": {
@@ -35,11 +35,11 @@
       }
     },
     {
-      "name": "gcc-12",
+      "name": "gcc-14",
       "generator": "Ninja",
       "cacheVariables": {
-        "CMAKE_C_COMPILER": "gcc-12",
-        "CMAKE_CXX_COMPILER": "g++-12"
+        "CMAKE_C_COMPILER": "gcc-14",
+        "CMAKE_CXX_COMPILER": "g++-14"
       },
       "condition": {
         "type": "notEquals",
