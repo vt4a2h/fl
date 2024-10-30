@@ -63,8 +63,18 @@ jobs:
       - name: Install system dependencies
         run: |
           brew install ninja || exit $?
-          brew install gcc@12 || exit $?
           brew install pkg-config || exit $?
+          brew install autoconf || exit $?
+          brew install autoconf-archive || exit $?
+          brew install automake || exit $?
+          brew install make || exit $?
+          brew install libtool || exit $?
+      - name: Get vcpkg
+        run: |
+          export VCPKG_INSTALLATION_ROOT="$HOME/vcpkg"
+          git clone https://github.com/microsoft/vcpkg "$VCPKG_INSTALLATION_ROOT"
+          "$VCPKG_INSTALLATION_ROOT/bootstrap-vcpkg.sh"
+          echo "vcpkg_installation_root=$VCPKG_INSTALLATION_ROOT" >> $GITHUB_ENV
       - name: Configure
         run: |
           cmake -S . -B cmake-build --preset ${{ matrix.preset }} \
@@ -72,7 +82,7 @@ jobs:
           -DFL_TEST=ON \
           -DFL_BENCHMARK=ON \
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-          -DCMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake || exit $?
+          -DCMAKE_TOOLCHAIN_FILE="${{ env.vcpkg_installation_root }}/scripts/buildsystems/vcpkg.cmake" || exit $?
       - name: Build
         run: |
           cmake --build cmake-build  --parallel --config ${{ matrix.build_type }} || exit $?
