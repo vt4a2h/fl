@@ -12,9 +12,9 @@
 
 #include <fl/expected/expected.hpp>
 
-constexpr fl::Expected<std::string, int> unexpectedlyAdd(int v)
+constexpr fl::Expected<std::string_view, int> unexpectedlyAdd(int v)
 {
-    fl::Expected<std::string, int> expected{fl::Unexpected{1}};
+    fl::Expected<std::string_view, int> expected{fl::Unexpected{1}};
     expected.error() += v;
 
     return expected;
@@ -48,7 +48,7 @@ TEST_CASE("Access expected error")
 
     SECTION("[constexpr] By const ref")
     {
-        static constexpr fl::Expected<std::string, int> expected(fl::Unexpected{42});;
+        static constexpr fl::Expected<std::string_view, int> expected(fl::Unexpected{42});;
         static constexpr auto &error = expected.error();
 
         STATIC_REQUIRE(error == 42);

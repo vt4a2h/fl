@@ -20,10 +20,10 @@ struct Default {
     int data{default_value};
 };
 
-constexpr fl::Expected<int, std::string> createExpectedByMove()
+constexpr fl::Expected<int, double> createExpectedByMove()
 {
-    fl::Expected<int, std::string> expected(42);
-    fl::Expected<int, std::string> anotherExpected(std::move(expected));
+    fl::Expected<int, double> expected(42);
+    fl::Expected<int, double> anotherExpected(std::move(expected));
 
     return anotherExpected;
 }
@@ -33,40 +33,40 @@ constexpr fl::Expected<int, std::string> createExpectedByMove()
 TEST_CASE("Expected create")
 {
     SECTION("Default constructable") {
-        const fl::Expected<int, std::string> expectedBox;
+        const fl::Expected<int, std::string_view> expectedBox;
 
         REQUIRE(expectedBox.hasValue());
     }
 
     SECTION("Default constructable with correct value") {
-        const fl::Expected<test::details::Default, std::string> expectedBox;
+        const fl::Expected<test::details::Default, std::string_view> expectedBox;
 
         REQUIRE(expectedBox.value().data == test::details::default_value);
     }
 
     SECTION("[Constexpr] Default constructable") {
-        constexpr fl::Expected<int, std::string> expectedBox;
+        constexpr fl::Expected<int, std::string_view> expectedBox;
 
         STATIC_REQUIRE(expectedBox.hasValue());
     }
 
     SECTION("[Constexpr] Default constructable with correct value") {
-        constexpr fl::Expected<test::details::Default, std::string> expectedBox;
+        constexpr fl::Expected<test::details::Default, std::string_view> expectedBox;
 
         STATIC_REQUIRE(expectedBox.value().data == test::details::default_value);
     }
 
     SECTION("From unexpected")
     {
-        const fl::Expected<int, std::string> expectedBox(fl::Unexpected{std::string{}});
+        const fl::Expected<int, std::string_view> expectedBox(fl::Unexpected{std::string{"123"}});
 
         REQUIRE(expectedBox.hasError());
     }
 
     SECTION("From unexpected with correct value")
     {
-        const std::string unexpectedValue{"42"};
-        const fl::Expected<int, std::string> expectedBox(fl::Unexpected{unexpectedValue});
+        const std::string_view unexpectedValue{"42"};
+        const fl::Expected<int, std::string_view> expectedBox(fl::Unexpected{unexpectedValue});
 
         REQUIRE(expectedBox.error() == unexpectedValue);
     }
@@ -99,8 +99,8 @@ TEST_CASE("Expected create")
 
     SECTION("[Constexpr] Copy ctor")
     {
-        static constexpr fl::Expected<int, std::string> expected(42);
-        static constexpr fl::Expected<int, std::string> anotherExpected(expected);
+        static constexpr fl::Expected<int, std::string_view> expected(42);
+        static constexpr fl::Expected<int, std::string_view> anotherExpected(expected);
 
         STATIC_REQUIRE(expected == anotherExpected);
     }
@@ -116,7 +116,7 @@ TEST_CASE("Expected create")
 
     SECTION("[Constexpr] Move ctor")
     {
-        static constexpr fl::Expected<int, std::string> expected(42);
+        static constexpr fl::Expected<int, double> expected(42);
         static constexpr auto createdExpected = test::details::createExpectedByMove();
 
         STATIC_REQUIRE(expected == createdExpected);

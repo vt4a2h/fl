@@ -12,9 +12,9 @@
 
 #include <fl/expected/expected.hpp>
 
-constexpr fl::Expected<int, std::string> expectedlyAdd(int v)
+constexpr fl::Expected<int, std::string_view> expectedlyAdd(int v)
 {
-    fl::Expected<int, std::string> expected{1};
+    fl::Expected<int, std::string_view> expected{1};
     expected.value() += v;
 
     return expected;
@@ -47,7 +47,7 @@ TEST_CASE("Access expected value")
 
     SECTION("[constexpr] By const ref")
     {
-        static constexpr fl::Expected<int, std::string> expected(42);
+        static constexpr fl::Expected<int, std::string_view> expected(42);
         static constexpr auto &value = expected.value();
 
         STATIC_REQUIRE(value == 42);
@@ -57,7 +57,7 @@ TEST_CASE("Access expected value")
     {
         fl::Expected<int, std::string> expected(41);
 
-        STATIC_REQUIRE(std::same_as<decltype(std::move(expected).value()), int&&>);
+        REQUIRE(std::same_as<decltype(std::move(expected).value()), int&&>);
     }
 
     SECTION("Buy const &&")
@@ -65,6 +65,6 @@ TEST_CASE("Access expected value")
         fl::Expected<int, std::string> expected(41);
         const fl::Expected<int, std::string>&& tmpExpected = std::move(expected);
 
-        STATIC_REQUIRE(std::same_as<decltype(tmpExpected.value()), const int&>);
+        REQUIRE(std::same_as<decltype(tmpExpected.value()), const int&>);
     }
 }
