@@ -163,7 +163,7 @@ public: // Methods
     // TODO: requires certain ctors etc
     template <class Self>
     requires (std::is_same_v<Value_, void>)
-    constexpr void value(this Self&& self) noexcept {
+    constexpr void value(this Self&& /*self*/) noexcept {
         // TODO: implement a handler {
         // assert(self.hasValue());
         // }
