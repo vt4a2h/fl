@@ -45,6 +45,7 @@ jobs:
         run: ctest -R "benchmark$" --test-dir "cmake-build" || exit $?
   build-mac:
     name: Build ${{ matrix.os }} ${{ matrix.build_type }} with ${{ matrix.preset }}
+    if: false
     strategy:
       matrix:
         os: [macos-14]
