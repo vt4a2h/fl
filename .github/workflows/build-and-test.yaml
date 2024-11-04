@@ -21,7 +21,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt update || exit $?
-          sudo apt -y install ninja-build || exit $?
+          sudo apt -y install ninja-build libc++-18-dev libc++abi-18-dev || exit $?
       - name: Install clang-18
         if: false
         run: |
