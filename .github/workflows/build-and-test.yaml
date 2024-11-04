@@ -28,12 +28,6 @@ jobs:
           wget https://apt.llvm.org/llvm.sh
           chmod +x ./llvm.sh
           sudo ./llvm.sh 18
-      - name: Check clang
-        run: |
-          which clang
-          which clang-18
-          which clang++-18
-          ls /usr/bin/ | grep clang
       - name: Configure
         run: |
           cmake -S . -B cmake-build --preset ${{ matrix.preset }} \

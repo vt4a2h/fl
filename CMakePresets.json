@@ -10,8 +10,8 @@
       "name": "clang-18",
       "generator": "Ninja",
       "environment": {
-        "CC": "clang-18",
-        "CXX": "clang++-18",
+        "CC": "/usr/bin/clang-18",
+        "CXX": "/usr/bin/clang++-18",
         "CXXFLAGS": "-stdlib=libc++"
       },
       "condition": {
