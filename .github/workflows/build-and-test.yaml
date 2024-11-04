@@ -35,7 +35,8 @@ jobs:
           -DFL_TEST=ON \
           -DFL_BENCHMARK=ON \
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-          -DCMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake || exit $?
+          -DCMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake 
+          cat /usr/local/share/vcpkg/buildtrees/detect_compiler/config-x64-linux-rel-out.log || exit -1
       - name: Build
         run: |
           cmake --build cmake-build  --parallel --config ${{ matrix.build_type }} || exit $?
