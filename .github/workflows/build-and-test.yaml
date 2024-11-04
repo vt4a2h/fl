@@ -35,8 +35,16 @@ jobs:
           -DFL_TEST=ON \
           -DFL_BENCHMARK=ON \
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
-          -DCMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake 
-          cat /usr/local/share/vcpkg/buildtrees/detect_compiler/config-x64-linux-rel-out.log || exit -1
+          -DCMAKE_TOOLCHAIN_FILE=$VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake || exit $?
+      - name: Check logs-1
+        if: always()
+        run: cat /usr/local/share/vcpkg/buildtrees/detect_compiler/config-x64-linux-rel-out.log
+      - name: Check logs-2
+        if: always()
+        run: cat /usr/local/share/vcpkg/buildtrees/detect_compiler/config-x64-linux-rel-err.log
+      - name: Check logs-3
+        if: always()
+        run: cat /usr/local/share/vcpkg/buildtrees/detect_compiler/config-x64-linux-rel-CMakeCache.txt.log
       - name: Build
         run: |
           cmake --build cmake-build  --parallel --config ${{ matrix.build_type }} || exit $?
