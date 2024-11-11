@@ -52,5 +52,12 @@ target_link_libraries(tests PRIVATE
     fl
 )
 
+if(MSVC)
+    target_compile_options(tests
+        PRIVATE
+            "/wd4996;" # external warning in fmt
+    )
+endif()
+
 include(Catch)
 catch_discover_tests(tests)
