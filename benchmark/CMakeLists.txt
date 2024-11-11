@@ -26,5 +26,12 @@ target_link_libraries(benchmarks PRIVATE
     fl
 )
 
+if(MSVC)
+    target_compile_options(benchmarks
+            PRIVATE
+            "/wd4996;" # external warning in fmt
+    )
+endif()
+
 include(Catch)
 catch_discover_tests(benchmarks)
