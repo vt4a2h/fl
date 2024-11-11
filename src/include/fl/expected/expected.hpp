@@ -101,20 +101,6 @@ public: // Methods
         requires (std::is_default_constructible_v<Value_>)
     = default;
 
-    template<class AnotherError>
-        requires (std::is_constructible_v<const AnotherError&, Error>)
-    constexpr explicit(!std::is_convertible_v<const AnotherError&, Error>) Expected(const Unexpected<AnotherError> &unexpected)
-        noexcept (std::is_nothrow_convertible_v<const AnotherError&, Error>)
-        : m_data(unexpected.error())
-    {}
-
-    template<class AnotherError>
-        requires (std::is_constructible_v<AnotherError, Error>)
-    constexpr explicit(!std::is_convertible_v<AnotherError, Error>) Expected(Unexpected<AnotherError> &&unexpected)
-        noexcept (std::is_nothrow_convertible_v<AnotherError, Error>)
-        : m_data(std::move(unexpected).error())
-    {}
-
     constexpr Expected(const Expected& other)
         noexcept (std::is_nothrow_copy_constructible_v<Data>)
         requires (std::is_copy_constructible_v<Data>)
@@ -140,6 +126,20 @@ public: // Methods
     constexpr explicit(!std::is_convertible_v<OtherValue, Value_>) Expected(OtherValue&& v)
         noexcept (std::is_nothrow_constructible_v<Value_, OtherValue>)
         : m_data(std::forward<OtherValue>(v))
+    {}
+
+    template<class AnotherError>
+        requires (std::is_constructible_v<const AnotherError&, Error>)
+    constexpr explicit(!std::is_convertible_v<const AnotherError&, Error>) Expected(const Unexpected<AnotherError> &unexpected)
+        noexcept (std::is_nothrow_convertible_v<const AnotherError&, Error>)
+            : m_data(unexpected.error())
+    {}
+
+    template<class AnotherError>
+        requires (std::is_constructible_v<AnotherError, Error>)
+    constexpr explicit(!std::is_convertible_v<AnotherError, Error>) Expected(Unexpected<AnotherError> &&unexpected)
+        noexcept (std::is_nothrow_convertible_v<AnotherError, Error>)
+            : m_data(std::move(unexpected).error())
     {}
 
     [[nodiscard]] constexpr bool hasValue() const {
