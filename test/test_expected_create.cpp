@@ -33,13 +33,13 @@ constexpr fl::Expected<int, double> createExpectedByMove()
 TEST_CASE("Expected create")
 {
     SECTION("Default constructable") {
-        const fl::Expected<int, std::string_view> expectedBox;
+        const fl::Expected<int, std::string> expectedBox;
 
         REQUIRE(expectedBox.hasValue());
     }
 
     SECTION("Default constructable with correct value") {
-        const fl::Expected<test::details::Default, std::string_view> expectedBox;
+        const fl::Expected<test::details::Default, std::string> expectedBox;
 
         REQUIRE(expectedBox.value().data == test::details::default_value);
     }
@@ -58,15 +58,15 @@ TEST_CASE("Expected create")
 
     SECTION("From unexpected")
     {
-        const fl::Expected<int, std::string_view> expectedBox(fl::Unexpected{std::string{"123"}});
+        const fl::Expected<int, std::string> expectedBox(fl::Unexpected{std::string{"123"}});
 
         REQUIRE(expectedBox.hasError());
     }
 
     SECTION("From unexpected with correct value")
     {
-        const std::string_view unexpectedValue{"42"};
-        const fl::Expected<int, std::string_view> expectedBox(fl::Unexpected{unexpectedValue});
+        const std::string unexpectedValue{"42"};
+        const fl::Expected<int, std::string> expectedBox(fl::Unexpected{unexpectedValue});
 
         REQUIRE(expectedBox.error() == unexpectedValue);
     }
