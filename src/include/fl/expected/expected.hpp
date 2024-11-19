@@ -116,16 +116,16 @@ public: // Methods
 //    template< class U, class G >
 //    constexpr expected( expected<U, G>&& other );
 
-    template <class OtherValue = Value_>
+    template <class AnotherValue = Value_>
         requires
-            (!std::is_same_v<std::remove_cvref_t<OtherValue>, std::in_place_t>) &&
-            (!std::is_same_v<Expected<Value_, Error_>, std::remove_cvref_t<OtherValue>>) &&
-            (std::is_constructible_v<Value_, OtherValue>) &&
-            (!concepts::IsUnexpected<OtherValue>) &&
-            (!std::is_same_v<std::remove_cvref_t<Value_>, bool> || !concepts::IsExpected<OtherValue>)
-    constexpr explicit(!std::is_convertible_v<OtherValue, Value_>) Expected(OtherValue&& v)
-        noexcept (std::is_nothrow_constructible_v<Value_, OtherValue>)
-        : m_data(std::forward<OtherValue>(v))
+            (!std::is_same_v<std::remove_cvref_t<AnotherValue>, std::in_place_t>) &&
+            (!std::is_same_v<Expected<Value_, Error_>, std::remove_cvref_t<AnotherValue>>) &&
+            (std::is_constructible_v<Value_, AnotherValue>) &&
+            (!concepts::IsUnexpected<AnotherValue>) &&
+            (!std::is_same_v<std::remove_cvref_t<Value_>, bool> || !concepts::IsExpected<AnotherValue>)
+    constexpr explicit(!std::is_convertible_v<AnotherValue, Value_>) Expected(AnotherValue&& v)
+        noexcept (std::is_nothrow_constructible_v<Value_, AnotherValue>)
+        : m_data(std::forward<AnotherValue>(v))
     {}
 
     template<class AnotherError>
