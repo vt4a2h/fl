@@ -25,6 +25,25 @@ constexpr bool is_unexpected = false;
 template<class E>
 constexpr bool is_unexpected<fl::Unexpected<E>> = true;
 
+template <class Value_, class AnotherValue_, class AnotherError_>
+concept CannotConstructExpectedOrValueFrom =
+    std::is_same_v<std::remove_cvref_t<Value_>, bool> ||
+        (!std::is_constructible_v<Value_, fl::Expected<AnotherValue_, AnotherError_>&> &&
+         !std::is_constructible_v<Value_, fl::Expected<AnotherValue_, AnotherError_>> &&
+         !std::is_constructible_v<Value_, const fl::Expected<AnotherValue_, AnotherError_>&> &&
+         !std::is_constructible_v<Value_, const fl::Expected<AnotherValue_, AnotherError_>> &&
+         !std::is_convertible_v<fl::Expected<AnotherValue_, AnotherError_>&, Value_> &&
+         !std::is_convertible_v<fl::Expected<AnotherValue_, AnotherError_>, Value_> &&
+         !std::is_convertible_v<const fl::Expected<AnotherValue_, AnotherError_>&, Value_> &&
+         !std::is_convertible_v<const fl::Expected<AnotherValue_, AnotherError_>, Value_>);
+
+template <class Error_, class AnotherValue_, class AnotherError_>
+concept CannotConstructUnexpectedFrom =
+    !std::is_constructible_v<fl::Unexpected<Error_>, fl::Expected<AnotherValue_, AnotherError_>&> &&
+    !std::is_constructible_v<fl::Unexpected<Error_>, fl::Expected<AnotherValue_, AnotherError_>> &&
+    !std::is_constructible_v<fl::Unexpected<Error_>, const fl::Expected<AnotherValue_, AnotherError_>&> &&
+    !std::is_constructible_v<fl::Unexpected<Error_>, const fl::Expected<AnotherValue_, AnotherError_>>;
+
 } // namespace details
 
 template<class T>
@@ -110,11 +129,29 @@ public: // Methods
         requires (std::is_move_constructible_v<Data>)
     = default;
 
-//    template< class U, class G >
-//    constexpr expected( const expected<U, G>& other );
-//
-//    template< class U, class G >
-//    constexpr expected( expected<U, G>&& other );
+    template<class AnotherValue_, class AnotherError_>
+        requires
+            (std::is_constructible_v<Value_, const AnotherValue_&>) &&
+            (std::is_constructible_v<Error_, const AnotherError_&>) &&
+            (concepts::details::CannotConstructExpectedOrValueFrom<Value_, AnotherValue_, AnotherError_>) &&
+            (concepts::details::CannotConstructUnexpectedFrom<Error_, AnotherValue_, AnotherError_>)
+    constexpr explicit(!std::is_convertible_v<const AnotherValue_&, Value_> || !std::is_convertible_v<const AnotherError_&, Error_>)
+        Expected(const Expected<AnotherValue_, AnotherError_>& other)
+    noexcept (std::is_nothrow_constructible_v<Value_, const AnotherValue_&> && std::is_nothrow_constructible_v<Error_, const AnotherError_&>)
+        : m_data(other.hasValue() ? Data{std::forward<const AnotherValue_&>(*other)} : Data{std::forward<const AnotherError_&>(other.error())})
+    {}
+
+    template<class AnotherValue_, class AnotherError_>
+        requires
+            (std::is_constructible_v<Value_, AnotherValue_>) &&
+            (std::is_constructible_v<Error_, AnotherError_>)  &&
+            (concepts::details::CannotConstructExpectedOrValueFrom<Value_, AnotherValue_, AnotherError_>) &&
+            (concepts::details::CannotConstructUnexpectedFrom<Error_, AnotherValue_, AnotherError_>)
+    constexpr explicit(!std::is_convertible_v<AnotherValue_, Value_> || !std::is_convertible_v<AnotherError_, Error_>)
+        Expected(Expected<AnotherValue_, AnotherError_>&& other)
+    noexcept (std::is_nothrow_constructible_v<Value_, AnotherValue_> && std::is_nothrow_constructible_v<Error_, AnotherError_>)
+        : m_data(other.hasValue() ? Data{std::forward<AnotherValue_>(*other)} : Data{std::forward<AnotherError_>(other.error())})
+    {}
 
     template <class AnotherValue = Value_>
         requires
