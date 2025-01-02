@@ -219,10 +219,7 @@ public: // Methods
         return std::get<Error_>(std::forward<Self>(self).m_data);
     }
 
-    constexpr friend bool operator ==(const Expected &lhs, const Expected &rhs)
-    {
-        return lhs.m_data == rhs.m_data;
-    }
+    constexpr friend bool operator ==(const Expected &lhs, const Expected &rhs) = default;
 
 private:
     Data m_data;
