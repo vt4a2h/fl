@@ -29,12 +29,12 @@ target_sources(tests PRIVATE
     test_writer_move_copy.cpp
 #    test_utils_ap_optional.cpp
 #    test_applicative_optional.cpp
-    test_expected_create.cpp
-    test_expected_unexpected_create.cpp
-    test_expected_unexpected_access_error.cpp
-    test_expected_access_value.cpp
-    test_expected_error.cpp
-    test_expected_traits.cpp
+    expected/test_expected_create.cpp
+    expected/test_expected_unexpected_create.cpp
+    expected/test_expected_unexpected_access_error.cpp
+    expected/test_expected_access_value.cpp
+    expected/test_expected_error.cpp
+    expected/test_expected_traits.cpp
 )
 
 #if (HAS_EXPECTED_RESULT)
