@@ -219,6 +219,12 @@ public: // Methods
         return std::get<Error_>(std::forward<Self>(self).m_data);
     }
 
+    template <class Self>
+    constexpr auto&& as_variant(this Self&& self) noexcept
+    {
+        return std::forward_like<Self>(self.m_data);
+    }
+
     constexpr friend bool operator ==(const Expected &lhs, const Expected &rhs) = default;
 
 private:
