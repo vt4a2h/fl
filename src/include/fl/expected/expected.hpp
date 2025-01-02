@@ -138,7 +138,7 @@ public: // Methods
     constexpr explicit(!std::is_convertible_v<const AnotherValue_&, Value_> || !std::is_convertible_v<const AnotherError_&, Error_>)
         Expected(const Expected<AnotherValue_, AnotherError_>& other)
     noexcept (std::is_nothrow_constructible_v<Value_, const AnotherValue_&> && std::is_nothrow_constructible_v<Error_, const AnotherError_&>)
-        : m_data(other.hasValue() ? Data{std::forward<const AnotherValue_&>(*other)} : Data{std::forward<const AnotherError_&>(other.error())})
+        : m_data(other.hasValue() ? Data{*other} : Data{other.error()})
     {}
 
     template<class AnotherValue_, class AnotherError_>
