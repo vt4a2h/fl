@@ -29,6 +29,7 @@ target_sources(tests PRIVATE
     test_writer_move_copy.cpp
 #    test_utils_ap_optional.cpp
 #    test_applicative_optional.cpp
+    test_match.cpp
     expected/test_expected_create.cpp
     expected/test_expected_unexpected_create.cpp
     expected/test_expected_unexpected_access_error.cpp
@@ -57,6 +58,7 @@ if(MSVC)
     target_compile_options(tests
         PRIVATE
             "/wd4996;" # external warning in fmt
+            "/wd4244;" # convert int/double in tests
     )
 endif()
 
