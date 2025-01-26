@@ -243,13 +243,31 @@ private:
 
 namespace experimental {
 
-template <class V, class E>
-struct expected : public std::variant<V, E>
-{
-    using std::variant<V, E>::variant;
+template <class Value>
+concept DefaultConstructableValue = std::is_default_constructible_v<std::remove_cvref_t<Value>>;
 
-    [[nodiscard]] constexpr bool has_value() const { return std::holds_alternative<V>(*this); }
-    [[nodiscard]] constexpr bool has_error() const { return std::holds_alternative<E>(*this); }
+template <class Value, class Error>
+concept ValueAndErrorHaveDifferentTypes = !std::is_same_v<std::remove_cvref_t<Value>, std::remove_cvref_t<Error>>;
+
+template <class From, class To>
+concept ImplicitlyConvertable = std::is_convertible_v<std::remove_cvref_t<From>, std::remove_cvref_t<To>>;
+
+template <class Value, class Error>
+concept CannotCreateFromEachOther = !ImplicitlyConvertable<Value, Error> && !ImplicitlyConvertable<Error, Value>;
+
+template <DefaultConstructableValue Value, class Error>
+    requires ValueAndErrorHaveDifferentTypes<Value, Error> &&
+             CannotCreateFromEachOther<Value, Error>
+struct expected : public std::variant<std::remove_cvref_t<Value>, std::remove_cvref_t<Error>>
+{
+    using variant_self_t = std::variant<std::remove_cvref_t<Value>, std::remove_cvref_t<Error>>;
+    using error_t = std::variant_alternative_t<0, variant_self_t>;
+    using value_t = std::variant_alternative_t<1, variant_self_t>;
+
+    using std::variant<Value, Error>::variant;
+
+    [[nodiscard]] constexpr bool has_value() const { return std::holds_alternative<Value>(*this); }
+    [[nodiscard]] constexpr bool has_error() const { return std::holds_alternative<Error>(*this); }
 
     constexpr explicit operator bool() const { return has_value(); }
 };
