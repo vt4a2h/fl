@@ -241,5 +241,20 @@ private:
     Data m_data;
 };
 
+namespace experimental {
+
+template <class V, class E>
+struct expected : public std::variant<V, E>
+{
+    using std::variant<V, E>::variant;
+
+    [[nodiscard]] constexpr bool has_value() const { return std::holds_alternative<V>(*this); }
+    [[nodiscard]] constexpr bool has_error() const { return std::holds_alternative<E>(*this); }
+
+    constexpr explicit operator bool() const { return has_value(); }
+};
+
+} // experimental
+
 
 } // fl

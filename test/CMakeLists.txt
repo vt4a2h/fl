@@ -37,6 +37,7 @@ target_sources(tests PRIVATE
     expected/test_expected_error.cpp
     expected/test_expected_traits.cpp
     expected/test_convert_to_variant.cpp
+    expected/test_expected_experimental.cpp
 )
 
 #if (HAS_EXPECTED_RESULT)
