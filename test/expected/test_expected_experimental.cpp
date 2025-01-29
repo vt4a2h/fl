@@ -14,6 +14,17 @@
 
 using namespace fl::experimental;
 
+struct Foo {};
+struct Bar {};
+
+struct ConvertableFromFoo{ explicit(false) ConvertableFromFoo(const Foo&) {} };
+struct ExplicitlyConvertableFromFoo{
+    ExplicitlyConvertableFromFoo() = default;
+    explicit ExplicitlyConvertableFromFoo(const Foo&) {}
+};
+
+struct NonDefaultConstructable { NonDefaultConstructable() = delete; };
+
 TEST_CASE("Create")
 {
     SECTION("Has default constructed value by default")
@@ -33,6 +44,18 @@ TEST_CASE("Create")
         const expected<double, std::string> e{"error"};
         REQUIRE(e.has_error());
     }
+
+    SECTION("User types")
+    {
+        using Expected  = expected<Foo, Bar>;
+
+        const auto&[expected, hasValue] = GENERATE(table<Expected, bool>({
+            {Expected{Foo{}}, true},
+            {Expected{Bar{}}, false},
+        }));
+
+        REQUIRE(expected.has_value() == hasValue);
+    }
 }
 
 TEST_CASE("Comparable")
@@ -47,4 +70,24 @@ TEST_CASE("Comparable")
     }));
 
     REQUIRE((lhs == rhs) == equal);
+}
+
+template <class Value, class Error>
+concept CanCreateExpected = requires {
+    expected<Value, Error>();
+};
+
+TEMPLATE_TEST_CASE_SIG("Can define a type", "",
+                       ((class V, class E, bool C), V, E, C),
+                       (Foo, Bar, true),
+                       (Bar, Foo, true),
+                       (Foo, Foo, false),
+                       (Foo, ConvertableFromFoo, false),
+                       (ConvertableFromFoo, Foo, false),
+                       (NonDefaultConstructable, Bar, false),
+                       (Bar, NonDefaultConstructable, true),
+                       (ExplicitlyConvertableFromFoo, Foo, true)
+                       )
+{
+    STATIC_REQUIRE(CanCreateExpected<V, E> == C);
 }
