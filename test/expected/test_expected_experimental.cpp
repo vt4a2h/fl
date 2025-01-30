@@ -12,6 +12,8 @@
 
 #include <fl/expected/expected.hpp>
 
+#include <expected>
+
 using namespace fl::experimental;
 
 struct Foo {};
@@ -90,4 +92,14 @@ TEMPLATE_TEST_CASE_SIG("Can define a type", "",
                        )
 {
     STATIC_REQUIRE(CanCreateExpected<V, E> == C);
+}
+
+TEST_CASE("And then")
+{
+    SECTION("Invoked") {
+        const expected<Foo, std::string> e;
+        const auto result = e.and_then([](const auto &) -> expected<Bar, std::string> { return {}; });
+
+        REQUIRE(result.has_value());
+    }
 }

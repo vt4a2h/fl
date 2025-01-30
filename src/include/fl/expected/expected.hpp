@@ -258,11 +258,34 @@ concept CannotCreateFromEachOther = !ImplicitlyConvertable<Value, Error> && !Imp
 template <DefaultConstructableValue Value, class Error>
     requires ValueAndErrorHaveDifferentTypes<Value, Error> &&
              CannotCreateFromEachOther<Value, Error>
+struct expected;
+
+namespace details {
+    template<class>
+    constexpr bool is_expected = false;
+
+    template<class V, class E>
+    constexpr bool is_expected<expected<V, E>> = true;
+} // namespace details
+
+template<class T>
+concept is_expected = details::is_expected<std::remove_cvref_t<T>>;
+
+template <class AndThenF, class Value, class Error>
+concept CorrectAndThenFunction = requires {
+    requires std::is_invocable_v<AndThenF, Value>;
+    requires is_expected<std::invoke_result_t<AndThenF, Value>>;
+    requires std::is_same_v<typename std::invoke_result_t<AndThenF, Value>::error_t, Error>;
+};
+
+template <DefaultConstructableValue Value, class Error>
+    requires ValueAndErrorHaveDifferentTypes<Value, Error> &&
+             CannotCreateFromEachOther<Value, Error>
 struct expected : public std::variant<std::remove_cvref_t<Value>, std::remove_cvref_t<Error>>
 {
     using variant_self_t = std::variant<std::remove_cvref_t<Value>, std::remove_cvref_t<Error>>;
-    using error_t = std::variant_alternative_t<0, variant_self_t>;
-    using value_t = std::variant_alternative_t<1, variant_self_t>;
+    using value_t = std::variant_alternative_t<0, variant_self_t>;
+    using error_t = std::variant_alternative_t<1, variant_self_t>;
 
     using std::variant<Value, Error>::variant;
 
@@ -270,6 +293,16 @@ struct expected : public std::variant<std::remove_cvref_t<Value>, std::remove_cv
     [[nodiscard]] constexpr bool has_error() const { return std::holds_alternative<Error>(*this); }
 
     constexpr explicit operator bool() const { return has_value(); }
+
+    template<class Self, CorrectAndThenFunction<value_t, error_t> F>
+    constexpr auto and_then(this Self&& self, F &&f) noexcept -> std::invoke_result_t<F, Value>
+    {
+        if (self.has_value()) {
+            return std::invoke(std::forward<F>(f), std::get<value_t>(std::forward<Self>(self)));
+        } else {
+            return std::get<error_t>(std::forward<Self>(self));
+        }
+    }
 };
 
 } // experimental
