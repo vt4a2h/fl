@@ -97,9 +97,33 @@ TEMPLATE_TEST_CASE_SIG("Can define a type", "",
 TEST_CASE("And then")
 {
     SECTION("Invoked") {
-        const expected<Foo, std::string> e;
-        const auto result = e.and_then([](const auto &) -> expected<Bar, std::string> { return {}; });
+        using Expected = expected<Foo, std::string>;
 
-        REQUIRE(result.has_value());
+        const auto [expected, expectedToBeInvoked] = GENERATE(table<Expected, bool>({
+            {Expected{Foo{}}, true},
+            {Expected{"123"}, false},
+        }));
+
+        bool invoked{};
+        std::ignore = expected.and_then([&invoked](const auto &) -> Expected {
+            invoked = true;
+            return {};
+        });
+
+        REQUIRE(invoked == expectedToBeInvoked);
+    }
+
+    SECTION("Type can be re-mapped")
+    {
+        const expected<Foo, std::string> e;
+
+        const int expectedNumber = 42;
+        const auto actualResult =
+            e.and_then([expectedNumber](const auto&) -> expected<int, std::string> { return expectedNumber; });
+
+        std::ignore = actualResult.and_then([](const auto& actualNumber) -> expected<int, std::string>{
+            REQUIRE(actualNumber == expectedNumber);
+            return {};
+        }); // NOTE: add or_else
     }
 }

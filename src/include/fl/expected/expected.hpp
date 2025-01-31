@@ -295,7 +295,7 @@ struct expected : public std::variant<std::remove_cvref_t<Value>, std::remove_cv
     constexpr explicit operator bool() const { return has_value(); }
 
     template<class Self, CorrectAndThenFunction<value_t, error_t> F>
-    constexpr auto and_then(this Self&& self, F &&f) noexcept -> std::invoke_result_t<F, Value>
+    [[nodiscard]] constexpr auto and_then(this Self&& self, F &&f) noexcept -> std::invoke_result_t<F, Value>
     {
         if (self.has_value()) {
             return std::invoke(std::forward<F>(f), std::get<value_t>(std::forward<Self>(self)));
