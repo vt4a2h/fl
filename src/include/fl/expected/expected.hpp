@@ -278,6 +278,13 @@ concept CorrectAndThenFunction = requires {
     requires std::is_same_v<typename std::invoke_result_t<AndThenF, Value>::error_t, Error>;
 };
 
+template <class AndThenF, class Value, class Error>
+concept CorrectOrElseFunction = requires {
+    requires std::is_invocable_v<AndThenF, Error>;
+    requires is_expected<std::invoke_result_t<AndThenF, Error>>;
+    requires std::is_same_v<typename std::invoke_result_t<AndThenF, Error>::value_t, Value>;
+};
+
 template <DefaultConstructableValue Value, class Error>
     requires ValueAndErrorHaveDifferentTypes<Value, Error> &&
              CannotCreateFromEachOther<Value, Error>
@@ -295,12 +302,22 @@ struct expected : public std::variant<std::remove_cvref_t<Value>, std::remove_cv
     constexpr explicit operator bool() const { return has_value(); }
 
     template<class Self, CorrectAndThenFunction<value_t, error_t> F>
-    [[nodiscard]] constexpr auto and_then(this Self&& self, F &&f) noexcept -> std::invoke_result_t<F, Value>
+    [[nodiscard]] constexpr auto and_then(this Self&& self, F &&f) noexcept -> std::invoke_result_t<F, value_t>
     {
         if (self.has_value()) {
             return std::invoke(std::forward<F>(f), std::get<value_t>(std::forward<Self>(self)));
         } else {
             return std::get<error_t>(std::forward<Self>(self));
+        }
+    }
+
+    template<class Self, CorrectOrElseFunction<value_t, error_t> F>
+    [[nodiscard]] constexpr auto or_else(this Self&& self, F &&f) noexcept -> std::invoke_result_t<F, error_t>
+    {
+        if (self.has_value()) {
+            return std::get<value_t>(std::forward<Self>(self));
+        } else {
+            return std::invoke(std::forward<F>(f), std::get<error_t>(std::forward<Self>(self)));
         }
     }
 };

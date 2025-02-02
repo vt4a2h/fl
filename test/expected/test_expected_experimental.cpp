@@ -99,10 +99,11 @@ TEST_CASE("And then")
     SECTION("Invoked") {
         using Expected = expected<Foo, std::string>;
 
-        const auto [expected, expectedToBeInvoked] = GENERATE(table<Expected, bool>({
-            {Expected{Foo{}}, true},
-            {Expected{"123"}, false},
-        }));
+        const auto [expected, expectedToBeInvoked] =
+            GENERATE(table<Expected, bool>({
+                {Expected{Foo{}}, true},
+                {Expected{"123"}, false},
+            }));
 
         bool invoked{};
         std::ignore = expected.and_then([&invoked](const auto &) -> Expected {
@@ -121,9 +122,54 @@ TEST_CASE("And then")
         const auto actualResult =
             e.and_then([expectedNumber](const auto&) -> expected<int, std::string> { return expectedNumber; });
 
-        std::ignore = actualResult.and_then([](const auto& actualNumber) -> expected<int, std::string>{
-            REQUIRE(actualNumber == expectedNumber);
+        std::ignore = actualResult
+            .and_then([](const auto& actualNumber) -> expected<int, std::string> {
+                REQUIRE(actualNumber == expectedNumber);
+                return {};
+            })
+            .or_else([](const auto&) -> expected<int, std::string> {
+                FAIL();
+                return {};
+            });
+    }
+}
+
+TEST_CASE("Or else")
+{
+    SECTION("Invoked") {
+        using Expected = expected<Foo, std::string>;
+
+        const auto [expected, expectedToBeInvoked] =
+            GENERATE(table<Expected, bool>({
+                {Expected{Foo{}}, false},
+                {Expected{"123"}, true},
+            }));
+
+        bool invoked{};
+        std::ignore = expected.or_else([&invoked](const auto &) -> Expected {
+            invoked = true;
             return {};
-        }); // NOTE: add or_else
+        });
+
+        REQUIRE(invoked == expectedToBeInvoked);
+    }
+
+    SECTION("Type can be re-mapped")
+    {
+        const expected<std::string, Foo> e{Foo{}};
+
+        const int expectedNumber = 42;
+        const auto actualResult =
+            e.or_else([expectedNumber](const auto&) -> expected<std::string, int> { return expectedNumber; });
+
+        std::ignore = actualResult
+            .or_else([](const auto& actualNumber) -> expected<std::string, int> {
+                REQUIRE(actualNumber == expectedNumber);
+                return actualNumber;
+            })
+            .and_then([](const auto&) -> expected<std::string, int> {
+                FAIL();
+                return {};
+            });
     }
 }
