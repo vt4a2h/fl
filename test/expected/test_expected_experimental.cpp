@@ -173,3 +173,71 @@ TEST_CASE("Or else")
             });
     }
 }
+
+TEST_CASE("Transform")
+{
+    SECTION("Invoked") {
+        using Expected = expected<Foo, std::string>;
+
+        const auto [expected, expectedToBeInvoked] =
+            GENERATE(table<Expected, bool>({
+                {Expected{Foo{}}, true},
+                {Expected{"123"}, false},
+            }));
+
+        bool invoked{};
+        std::ignore = expected.transform([&invoked](const auto &) {
+            invoked = true;
+            return invoked;
+        });
+
+        REQUIRE(invoked == expectedToBeInvoked);
+    }
+
+    SECTION("Type can be changed")
+    {
+        std::ignore = expected<int, std::string>{}
+            .transform([](const auto&) {
+                SUCCEED();
+                return Foo{};
+            })
+            .or_else([](const std::string&) -> expected<Foo, std::string> {
+                FAIL();
+                return {};
+            });
+    }
+}
+
+TEST_CASE("Transform error")
+{
+    SECTION("Invoked") {
+        using Expected = expected<Foo, std::string>;
+
+        const auto [expected, expectedToBeInvoked] =
+            GENERATE(table<Expected, bool>({
+                {Expected{Foo{}}, false},
+                {Expected{"123"}, true},
+            }));
+
+        bool invoked{};
+        std::ignore = expected.transform_error([&invoked](const auto &) {
+            invoked = true;
+            return invoked;
+        });
+
+        REQUIRE(invoked == expectedToBeInvoked);
+    }
+
+    SECTION("Type can be changed")
+    {
+        std::ignore = expected<int, std::string>{"123"}
+            .transform_error([](const auto&) {
+                SUCCEED();
+                return Foo{};
+            })
+            .transform([](const int&) -> int {
+                FAIL();
+                return {};
+            });
+    }
+}

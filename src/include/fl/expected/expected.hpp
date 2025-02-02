@@ -278,11 +278,23 @@ concept CorrectAndThenFunction = requires {
     requires std::is_same_v<typename std::invoke_result_t<AndThenF, Value>::error_t, Error>;
 };
 
-template <class AndThenF, class Value, class Error>
+template <class OrElseF, class Value, class Error>
 concept CorrectOrElseFunction = requires {
-    requires std::is_invocable_v<AndThenF, Error>;
-    requires is_expected<std::invoke_result_t<AndThenF, Error>>;
-    requires std::is_same_v<typename std::invoke_result_t<AndThenF, Error>::value_t, Value>;
+    requires std::is_invocable_v<OrElseF, Error>;
+    requires is_expected<std::invoke_result_t<OrElseF, Error>>;
+    requires std::is_same_v<typename std::invoke_result_t<OrElseF, Error>::value_t, Value>;
+};
+
+template <class TransformF, class Value>
+concept CorrectTransformFunction = requires {
+    requires std::is_invocable_v<TransformF, Value>;
+    requires !is_expected<std::invoke_result_t<TransformF, Value>>;
+};
+
+template <class TransformF, class Error>
+concept CorrectTransformErrorFunction = requires {
+    requires std::is_invocable_v<TransformF, Error>;
+    requires !is_expected<std::invoke_result_t<TransformF, Error>>;
 };
 
 template <DefaultConstructableValue Value, class Error>
@@ -313,6 +325,28 @@ struct expected : public std::variant<std::remove_cvref_t<Value>, std::remove_cv
 
     template<class Self, CorrectOrElseFunction<value_t, error_t> F>
     [[nodiscard]] constexpr auto or_else(this Self&& self, F &&f) noexcept -> std::invoke_result_t<F, error_t>
+    {
+        if (self.has_value()) {
+            return std::get<value_t>(std::forward<Self>(self));
+        } else {
+            return std::invoke(std::forward<F>(f), std::get<error_t>(std::forward<Self>(self)));
+        }
+    }
+
+    template<class Self, CorrectTransformFunction<value_t> F>
+    [[nodiscard]] constexpr auto transform(this Self&& self, F &&f) noexcept
+        -> expected<std::invoke_result_t<F, value_t>, error_t>
+    {
+        if (self.has_value()) {
+            return std::invoke(std::forward<F>(f), std::get<value_t>(std::forward<Self>(self)));
+        } else {
+            return std::get<error_t>(std::forward<Self>(self));
+        }
+    }
+
+    template<class Self, CorrectTransformErrorFunction<error_t> F>
+    [[nodiscard]] constexpr auto transform_error(this Self&& self, F &&f) noexcept
+        -> expected<value_t, std::invoke_result_t<F, error_t>>
     {
         if (self.has_value()) {
             return std::get<value_t>(std::forward<Self>(self));
