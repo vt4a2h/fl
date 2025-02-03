@@ -297,6 +297,9 @@ concept CorrectTransformErrorFunction = requires {
     requires !is_expected<std::invoke_result_t<TransformF, Error>>;
 };
 
+template <class NewType, class ValueType, class ErrorType>
+concept ReBindable = ImplicitlyConvertable<ValueType, NewType> || ImplicitlyConvertable<ErrorType, NewType>;
+
 template <DefaultConstructableValue Value, class Error>
     requires ValueAndErrorHaveDifferentTypes<Value, Error> &&
              CannotCreateFromEachOther<Value, Error>
@@ -352,6 +355,18 @@ struct expected : public std::variant<std::remove_cvref_t<Value>, std::remove_cv
             return std::get<value_t>(std::forward<Self>(self));
         } else {
             return std::invoke(std::forward<F>(f), std::get<error_t>(std::forward<Self>(self)));
+        }
+    }
+
+    template<ReBindable<value_t, error_t> NewValueType, class Self>
+    [[nodiscard]] constexpr auto rebind(this Self&& self) noexcept
+        -> expected<std::conditional_t<ImplicitlyConvertable<value_t, NewValueType>, NewValueType, value_t>,
+                    std::conditional_t<ImplicitlyConvertable<error_t , NewValueType>, NewValueType, error_t>>
+    {
+        if (self.has_value()) {
+            return std::get<value_t>(std::forward<Self>(self));
+        } else {
+            return std::get<error_t>(std::forward<Self>(self));
         }
     }
 };

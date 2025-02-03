@@ -19,7 +19,10 @@ using namespace fl::experimental;
 struct Foo {};
 struct Bar {};
 
-struct ConvertableFromFoo{ explicit(false) ConvertableFromFoo(const Foo&) {} };
+struct ConvertableFromFoo{
+    ConvertableFromFoo() = default;
+    explicit(false) ConvertableFromFoo(const Foo&) {}
+};
 struct ExplicitlyConvertableFromFoo{
     ExplicitlyConvertableFromFoo() = default;
     explicit ExplicitlyConvertableFromFoo(const Foo&) {}
@@ -240,4 +243,20 @@ TEST_CASE("Transform error")
                 return {};
             });
     }
+}
+
+template <class Expected, class NewType>
+concept CanInvokeRebind = requires(Expected e) {
+    e.template rebind<NewType>();
+};
+
+TEMPLATE_TEST_CASE_SIG("Rebind", "",
+                       ((class E, class N, bool C), E, N, C),
+                        (expected<Foo, std::string>, ConvertableFromFoo, true),
+                        (expected<Foo, std::string>, ExplicitlyConvertableFromFoo, false),
+                        (expected<int, std::string>, double, true),
+                        (expected<Foo, std::string>, double, false)
+                       )
+{
+    STATIC_REQUIRE(CanInvokeRebind<E, N> == C);
 }
