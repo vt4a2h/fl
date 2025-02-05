@@ -361,10 +361,10 @@ struct expected : public std::variant<std::remove_cvref_t<Value>, std::remove_cv
         }
     }
 
-    template<ReBindable<value_t, error_t> NewValueType, class Self>
+    template<ReBindable<value_t, error_t> NewType, class Self>
     [[nodiscard]] constexpr auto rebind(this Self&& self) noexcept
-        -> expected<std::conditional_t<ImplicitlyConvertable<value_t, NewValueType>, NewValueType, value_t>,
-                    std::conditional_t<ImplicitlyConvertable<error_t , NewValueType>, NewValueType, error_t>>
+        -> expected<std::conditional_t<ImplicitlyConvertable<value_t, NewType>, NewType, value_t>,
+                    std::conditional_t<ImplicitlyConvertable<error_t , NewType>, NewType, error_t>>
     {
         if (self.has_value()) {
             return std::get<value_t>(std::forward<Self>(self));
