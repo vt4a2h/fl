@@ -91,7 +91,8 @@ TEMPLATE_TEST_CASE_SIG("Can define a type", "",
                        (ConvertableFromFoo, Foo, false),
                        (NonDefaultConstructable, Bar, false),
                        (Bar, NonDefaultConstructable, true),
-                       (ExplicitlyConvertableFromFoo, Foo, true)
+                       (ExplicitlyConvertableFromFoo, Foo, true),
+                       (ExplicitlyConvertableFromFoo, void, false)
                        )
 {
     STATIC_REQUIRE(CanCreateExpected<V, E> == C);

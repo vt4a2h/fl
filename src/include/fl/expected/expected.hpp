@@ -255,7 +255,10 @@ concept ImplicitlyConvertable = std::is_convertible_v<std::remove_cvref_t<From>,
 template <class Value, class Error>
 concept CannotCreateFromEachOther = !ImplicitlyConvertable<Value, Error> && !ImplicitlyConvertable<Error, Value>;
 
-template <DefaultConstructableValue Value, class Error>
+template <class Error>
+concept NonVoidError = !std::is_void_v<std::remove_cvref_t<Error>>;
+
+template <DefaultConstructableValue Value, NonVoidError Error>
     requires ValueAndErrorHaveDifferentTypes<Value, Error> &&
              CannotCreateFromEachOther<Value, Error>
 struct expected;
@@ -300,7 +303,7 @@ concept CorrectTransformErrorFunction = requires {
 template <class NewType, class ValueType, class ErrorType>
 concept ReBindable = ImplicitlyConvertable<ValueType, NewType> || ImplicitlyConvertable<ErrorType, NewType>;
 
-template <DefaultConstructableValue Value, class Error>
+template <DefaultConstructableValue Value, NonVoidError Error>
     requires ValueAndErrorHaveDifferentTypes<Value, Error> &&
              CannotCreateFromEachOther<Value, Error>
 struct expected : public std::variant<std::remove_cvref_t<Value>, std::remove_cvref_t<Error>>
