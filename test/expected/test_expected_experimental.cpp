@@ -261,3 +261,59 @@ TEMPLATE_TEST_CASE_SIG("Rebind", "",
 {
     STATIC_REQUIRE(CanInvokeRebind<E, N> == C);
 }
+
+// Keep it as a separate test case for simplicity, please
+TEST_CASE("With void value type")
+{
+    using Expected = expected<void, std::string>;
+
+    SECTION("Create")
+    {
+        STATIC_REQUIRE(std::is_default_constructible_v<Expected>);
+    }
+
+    SECTION("Create with error type")
+    {
+        STATIC_REQUIRE(std::is_constructible_v<Expected, std::string>);
+    }
+
+    SECTION("Can return from a function")
+    {
+        const auto f = []() -> Expected { return {}; };
+        STATIC_REQUIRE(std::is_invocable_v<decltype(f)>);
+    }
+
+    SECTION("Has value or error")
+    {
+        const auto&[expectedBox, checker, expectedHasValue] =
+            GENERATE(table<Expected, std::function<bool(const Expected&)>, bool>({
+                {Expected{}, [](const auto& e){ return e.has_value(); }, true},
+                {Expected{"42"}, [](const auto& e){ return e.has_value(); }, false},
+                {Expected{}, [](const auto& e) { return static_cast<bool>(e); }, true},
+                {Expected{"42"}, [](const auto& e) { return static_cast<bool>(e); }, false},
+                {Expected{}, [](const auto& e){ return e.has_error(); }, false},
+                {Expected{"42"}, [](const auto& e){ return e.has_error(); }, true}
+            }));
+
+        REQUIRE(checker(expectedBox) == expectedHasValue);
+    }
+
+    SECTION("And then")
+    {
+        Expected e;
+
+        const auto [expected, expectedToBeInvoked] =
+            GENERATE(table<Expected, bool>({
+                {Expected{}, true},
+                {Expected{"123"}, false},
+            }));
+
+        bool invoked{};
+        std::ignore = expected.and_then([&invoked]() -> Expected {
+            invoked = true;
+            return {};
+        });
+
+        REQUIRE(invoked == expectedToBeInvoked);
+    }
+}

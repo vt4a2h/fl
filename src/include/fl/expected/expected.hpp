@@ -244,7 +244,8 @@ private:
 namespace experimental {
 
 template <class Value>
-concept DefaultConstructableValue = std::is_default_constructible_v<std::remove_cvref_t<Value>>;
+concept CorrectValue =
+    std::is_default_constructible_v<std::remove_cvref_t<Value>> || std::is_void_v<std::remove_cvref_t<Value>>;
 
 template <class Value, class Error>
 concept ValueAndErrorHaveDifferentTypes = !std::is_same_v<std::remove_cvref_t<Value>, std::remove_cvref_t<Error>>;
@@ -258,7 +259,7 @@ concept CannotCreateFromEachOther = !ImplicitlyConvertable<Value, Error> && !Imp
 template <class Error>
 concept NonVoidError = !std::is_void_v<std::remove_cvref_t<Error>>;
 
-template <DefaultConstructableValue Value, NonVoidError Error>
+template <CorrectValue Value, NonVoidError Error>
     requires ValueAndErrorHaveDifferentTypes<Value, Error> &&
              CannotCreateFromEachOther<Value, Error>
 struct expected;
@@ -279,6 +280,13 @@ concept CorrectAndThenFunction = requires {
     requires std::is_invocable_v<AndThenF, Value>;
     requires is_expected<std::invoke_result_t<AndThenF, Value>>;
     requires std::is_same_v<typename std::invoke_result_t<AndThenF, Value>::error_t, Error>;
+};
+
+template <class AndThenF, class Error>
+concept CorrectAndThenFunctionNoArgs = requires {
+    requires std::is_invocable_v<AndThenF>;
+    requires is_expected<std::invoke_result_t<AndThenF>>;
+    requires std::is_same_v<typename std::invoke_result_t<AndThenF>::error_t, Error>;
 };
 
 template <class OrElseF, class Value, class Error>
@@ -303,18 +311,24 @@ concept CorrectTransformErrorFunction = requires {
 template <class NewType, class ValueType, class ErrorType>
 concept ReBindable = ImplicitlyConvertable<ValueType, NewType> || ImplicitlyConvertable<ErrorType, NewType>;
 
-template <DefaultConstructableValue Value, NonVoidError Error>
+template <class Value>
+using ValueOrMonostate = std::conditional_t<std::is_void_v<std::remove_cvref_t<Value>>, std::monostate, Value>;
+
+template <class Value>
+using VoidIfMonostate = std::conditional_t<std::is_same_v<std::monostate, Value>, std::void_t<>, Value>;
+
+template <CorrectValue Value, NonVoidError Error>
     requires ValueAndErrorHaveDifferentTypes<Value, Error> &&
              CannotCreateFromEachOther<Value, Error>
-struct expected : public std::variant<std::remove_cvref_t<Value>, std::remove_cvref_t<Error>>
+struct expected : public std::variant<std::remove_cvref_t<ValueOrMonostate<Value>>, std::remove_cvref_t<Error>>
 {
-    using variant_self_t = std::variant<std::remove_cvref_t<Value>, std::remove_cvref_t<Error>>;
-    using value_t = std::variant_alternative_t<0, variant_self_t>;
+    using variant_self_t = std::variant<std::remove_cvref_t<ValueOrMonostate<Value>>, std::remove_cvref_t<Error>>;
+    using value_t = VoidIfMonostate<std::variant_alternative_t<0, variant_self_t>>;
     using error_t = std::variant_alternative_t<1, variant_self_t>;
 
-    using std::variant<Value, Error>::variant;
+    using variant_self_t::variant_self_t;
 
-    [[nodiscard]] constexpr bool has_value() const { return std::holds_alternative<Value>(*this); }
+    [[nodiscard]] constexpr bool has_value() const { return std::holds_alternative<ValueOrMonostate<Value>>(*this); }
     [[nodiscard]] constexpr bool has_error() const { return std::holds_alternative<Error>(*this); }
 
     constexpr explicit operator bool() const { return has_value(); }
@@ -324,6 +338,17 @@ struct expected : public std::variant<std::remove_cvref_t<Value>, std::remove_cv
     {
         if (self.has_value()) {
             return std::invoke(std::forward<F>(f), std::get<value_t>(std::forward<Self>(self)));
+        } else {
+            return std::get<error_t>(std::forward<Self>(self));
+        }
+    }
+
+    template<class Self, CorrectAndThenFunctionNoArgs<error_t> F>
+        requires (std::is_void_v<value_t>)
+    [[nodiscard]] constexpr auto and_then(this Self&& self, F &&f) noexcept -> std::invoke_result_t<F>
+    {
+        if (self.has_value()) {
+            return std::invoke(std::forward<F>(f));
         } else {
             return std::get<error_t>(std::forward<Self>(self));
         }
