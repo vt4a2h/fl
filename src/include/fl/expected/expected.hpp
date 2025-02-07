@@ -270,6 +270,8 @@ namespace details {
 
     template<class V, class E>
     constexpr bool is_expected<expected<V, E>> = true;
+
+    struct monostate{};
 } // namespace details
 
 template<class T>
@@ -281,13 +283,6 @@ concept CorrectAndThenFunction = requires {
     requires is_expected<std::invoke_result_t<AndThenF, Args...>>;
     requires std::is_same_v<typename std::invoke_result_t<AndThenF, Args...>::error_t, Error>;
 };
-
-//template <class AndThenF, class Error>
-//concept CorrectAndThenFunctionNoArgs = requires {
-//    requires std::is_invocable_v<AndThenF>;
-//    requires is_expected<std::invoke_result_t<AndThenF>>;
-//    requires std::is_same_v<typename std::invoke_result_t<AndThenF>::error_t, Error>;
-//};
 
 template <class OrElseF, class Value, class Error>
 concept CorrectOrElseFunction = requires {
@@ -312,10 +307,10 @@ template <class NewType, class ValueType, class ErrorType>
 concept ReBindable = ImplicitlyConvertable<ValueType, NewType> || ImplicitlyConvertable<ErrorType, NewType>;
 
 template <class Value>
-using ValueOrMonostate = std::conditional_t<std::is_void_v<std::remove_cvref_t<Value>>, std::monostate, Value>;
+using ValueOrMonostate = std::conditional_t<std::is_void_v<std::remove_cvref_t<Value>>, details::monostate, Value>;
 
 template <class Value>
-using VoidIfMonostate = std::conditional_t<std::is_same_v<std::monostate, Value>, std::void_t<>, Value>;
+using VoidIfMonostate = std::conditional_t<std::is_same_v<details::monostate, Value>, std::void_t<>, Value>;
 
 template <CorrectValue Value, NonVoidError Error>
     requires ValueAndErrorHaveDifferentTypes<Value, Error> &&
