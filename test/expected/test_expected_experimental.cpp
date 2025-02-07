@@ -180,7 +180,8 @@ TEST_CASE("Or else")
 
 TEST_CASE("Transform")
 {
-    SECTION("Invoked") {
+    SECTION("Invoked")
+    {
         using Expected = expected<Foo, std::string>;
 
         const auto [expected, expectedToBeInvoked] =
@@ -300,8 +301,6 @@ TEST_CASE("With void value type")
 
     SECTION("And then")
     {
-        Expected e;
-
         const auto [expected, expectedToBeInvoked] =
             GENERATE(table<Expected, bool>({
                 {Expected{}, true},
@@ -315,5 +314,35 @@ TEST_CASE("With void value type")
         });
 
         REQUIRE(invoked == expectedToBeInvoked);
+    }
+
+    SECTION("Transform: invoked")
+    {
+        const auto [expected, expectedToBeInvoked] =
+            GENERATE(table<Expected, bool>({
+                {Expected{}, true},
+                {Expected{"123"}, false},
+            }));
+
+        bool invoked{};
+        std::ignore = expected.transform([&invoked]() {
+            invoked = true;
+            return invoked;
+        });
+
+        REQUIRE(invoked == expectedToBeInvoked);
+    }
+
+    SECTION("Transform: type can be changed")
+    {
+        std::ignore = expected<void, std::string>{}
+            .transform([]() {
+                SUCCEED();
+                return Foo{};
+            })
+            .or_else([](const std::string&) -> expected<Foo, std::string> {
+                FAIL();
+                return {};
+            });
     }
 }

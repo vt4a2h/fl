@@ -275,19 +275,19 @@ namespace details {
 template<class T>
 concept is_expected = details::is_expected<std::remove_cvref_t<T>>;
 
-template <class AndThenF, class Value, class Error>
+template <class AndThenF, class Error, class ...Args>
 concept CorrectAndThenFunction = requires {
-    requires std::is_invocable_v<AndThenF, Value>;
-    requires is_expected<std::invoke_result_t<AndThenF, Value>>;
-    requires std::is_same_v<typename std::invoke_result_t<AndThenF, Value>::error_t, Error>;
+    requires std::is_invocable_v<AndThenF, Args...>;
+    requires is_expected<std::invoke_result_t<AndThenF, Args...>>;
+    requires std::is_same_v<typename std::invoke_result_t<AndThenF, Args...>::error_t, Error>;
 };
 
-template <class AndThenF, class Error>
-concept CorrectAndThenFunctionNoArgs = requires {
-    requires std::is_invocable_v<AndThenF>;
-    requires is_expected<std::invoke_result_t<AndThenF>>;
-    requires std::is_same_v<typename std::invoke_result_t<AndThenF>::error_t, Error>;
-};
+//template <class AndThenF, class Error>
+//concept CorrectAndThenFunctionNoArgs = requires {
+//    requires std::is_invocable_v<AndThenF>;
+//    requires is_expected<std::invoke_result_t<AndThenF>>;
+//    requires std::is_same_v<typename std::invoke_result_t<AndThenF>::error_t, Error>;
+//};
 
 template <class OrElseF, class Value, class Error>
 concept CorrectOrElseFunction = requires {
@@ -296,10 +296,10 @@ concept CorrectOrElseFunction = requires {
     requires std::is_same_v<typename std::invoke_result_t<OrElseF, Error>::value_t, Value>;
 };
 
-template <class TransformF, class Value>
+template <class TransformF, class ...Args>
 concept CorrectTransformFunction = requires {
-    requires std::is_invocable_v<TransformF, Value>;
-    requires !is_expected<std::invoke_result_t<TransformF, Value>>;
+    requires std::is_invocable_v<TransformF, Args...>;
+    requires !is_expected<std::invoke_result_t<TransformF, Args...>>;
 };
 
 template <class TransformF, class Error>
@@ -333,7 +333,7 @@ struct expected : public std::variant<std::remove_cvref_t<ValueOrMonostate<Value
 
     constexpr explicit operator bool() const { return has_value(); }
 
-    template<class Self, CorrectAndThenFunction<value_t, error_t> F>
+    template<class Self, CorrectAndThenFunction<error_t, value_t> F>
     [[nodiscard]] constexpr auto and_then(this Self&& self, F &&f) noexcept -> std::invoke_result_t<F, value_t>
     {
         if (self.has_value()) {
@@ -343,7 +343,7 @@ struct expected : public std::variant<std::remove_cvref_t<ValueOrMonostate<Value
         }
     }
 
-    template<class Self, CorrectAndThenFunctionNoArgs<error_t> F>
+    template<class Self, CorrectAndThenFunction<error_t> F>
         requires (std::is_void_v<value_t>)
     [[nodiscard]] constexpr auto and_then(this Self&& self, F &&f) noexcept -> std::invoke_result_t<F>
     {
@@ -370,6 +370,18 @@ struct expected : public std::variant<std::remove_cvref_t<ValueOrMonostate<Value
     {
         if (self.has_value()) {
             return std::invoke(std::forward<F>(f), std::get<value_t>(std::forward<Self>(self)));
+        } else {
+            return std::get<error_t>(std::forward<Self>(self));
+        }
+    }
+
+    template<class Self, CorrectTransformFunction<> F>
+        requires (std::is_void_v<value_t>)
+    [[nodiscard]] constexpr auto transform(this Self&& self, F &&f) noexcept
+        -> expected<std::invoke_result_t<F>, error_t>
+    {
+        if (self.has_value()) {
+            return std::invoke(std::forward<F>(f));
         } else {
             return std::get<error_t>(std::forward<Self>(self));
         }
