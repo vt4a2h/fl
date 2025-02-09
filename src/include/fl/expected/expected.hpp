@@ -272,6 +272,25 @@ namespace details {
     constexpr bool is_expected<expected<V, E>> = true;
 
     struct monostate{};
+
+    template <class ...Args>
+    concept AtLeastONeArgIsRequired = sizeof ...(Args) >= 1;
+
+    template <class F, AtLeastONeArgIsRequired ...Args>
+    [[nodiscard]] auto bind_back(F &&f, Args &&...args) noexcept
+    {
+        return [...b_args = std::forward<Args>(args), b_f = std::forward<F>(f)]<class ...F_Args>(F_Args &&...f_args) {
+            return std::invoke(b_f, std::forward<F_Args>(f_args)..., b_args...);
+        };
+    }
+
+    template <class F, AtLeastONeArgIsRequired ...Args>
+    [[nodiscard]] auto bind_front(F &&f, Args &&...args) noexcept
+    {
+        return [...f_args = std::forward<Args>(args), b_f = std::forward<F>(f)]<class ...B_Args>(B_Args &&...b_args) {
+            return std::invoke(b_f, f_args..., std::forward<B_Args>(b_args)...);
+        };
+    }
 } // namespace details
 
 template<class T>

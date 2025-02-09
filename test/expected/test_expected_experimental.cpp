@@ -30,6 +30,11 @@ struct ExplicitlyConvertableFromFoo{
 
 struct NonDefaultConstructable { NonDefaultConstructable() = delete; };
 
+struct AddOne
+{
+    int op(int v) const { return v + 1; }
+};
+
 TEST_CASE("Create")
 {
     SECTION("Has default constructed value by default")
@@ -344,5 +349,34 @@ TEST_CASE("With void value type")
                 FAIL();
                 return {};
             });
+    }
+}
+
+// NOTE: automatically wrap regular reference is too dangerous, you can forward something as
+//       a std::reference_wrapper and then gen a lifetime issues
+TEST_CASE("Bind")
+{
+    SECTION("Bind back: regular usage")
+    {
+        const auto add = [](int l, int r) { return l + r; };
+        const auto addOne = details::bind_back(add, 1);
+
+        const int actualResult = addOne(41);
+        const int expectedResult = 42;
+
+        REQUIRE(actualResult == expectedResult);
+    }
+
+    SECTION("Bind front: regular usage")
+    {
+        const AddOne adder;
+        const auto addOne = details::bind_front(&AddOne::op, adder);
+
+        const int v{41};
+
+        const int actualResult = addOne(v);
+        const int expectedResult = 42;
+
+        REQUIRE(actualResult == expectedResult);
     }
 }
