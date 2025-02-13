@@ -276,10 +276,25 @@ namespace details {
     template <class ...Args>
     concept AtLeastONeArgIsRequired = sizeof ...(Args) >= 1;
 
+    template<typename T>
+    inline constexpr bool always_false_v = false;
+
+    template <class T>
+    decltype(auto) copy_if_non_movable(T &&v)
+    {
+        if constexpr (!std::is_const_v<std::remove_reference_t<T>> &&
+                      !std::is_rvalue_reference_v<T> &&
+                      !std::is_move_constructible_v<std::remove_cvref_t<T>>) {
+            return static_cast<std::remove_cvref_t<T>>(v);
+        } else {
+            return std::forward<T>(v);
+        }
+    }
+
     template <class F, AtLeastONeArgIsRequired ...Args>
     [[nodiscard]] auto bind_back(F &&f, Args &&...args) noexcept
     {
-        return [...b_args = std::forward<Args>(args), b_f = std::forward<F>(f)]<class ...F_Args>(F_Args &&...f_args) {
+        return [...b_args = copy_if_non_movable(std::forward<Args>(args)), b_f = std::forward<F>(f)]<class ...F_Args>(F_Args &&...f_args) {
             return std::invoke(b_f, std::forward<F_Args>(f_args)..., b_args...);
         };
     }
@@ -287,8 +302,8 @@ namespace details {
     template <class F, AtLeastONeArgIsRequired ...Args>
     [[nodiscard]] auto bind_front(F &&f, Args &&...args) noexcept
     {
-        return [...f_args = std::forward<Args>(args), b_f = std::forward<F>(f)]<class ...B_Args>(B_Args &&...b_args) {
-            return std::invoke(b_f, f_args..., std::forward<B_Args>(b_args)...);
+        return [...f_args = copy_if_non_movable(std::forward<Args>(args)), b_f = std::forward<F>(f)]<class ...B_Args>(B_Args &&...b_args) {
+            return std::invoke(b_f, std::forward_like<Args>(f_args)..., b_args...);
         };
     }
 } // namespace details
