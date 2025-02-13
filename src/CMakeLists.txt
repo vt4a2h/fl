@@ -4,7 +4,7 @@ add_library(fl::fl ALIAS fl)
 
 if (FL_DEV)
     set_target_properties(fl PROPERTIES
-        CXX_STANDARD 23
+        CXX_STANDARD 26
         CMAKE_CXX_EXTENSIONS OFF
     )
 
