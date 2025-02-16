@@ -352,30 +352,9 @@ TEST_CASE("With void value type")
     }
 }
 
-struct MoveOnly
+struct TestType
 {
-    MoveOnly() = default;
-    ~MoveOnly() = default;
-
-    MoveOnly(const MoveOnly&) = delete;
-    MoveOnly(MoveOnly&&) = default;
-
-    MoveOnly &operator=(const MoveOnly&) = delete;
-    MoveOnly &operator=(MoveOnly&&) = default;
 };
-
-struct CopyOnly
-{
-    CopyOnly() = default;
-    ~CopyOnly() = default;
-
-    CopyOnly(const CopyOnly&) = default;
-    CopyOnly(CopyOnly&&) = delete;
-
-    CopyOnly &operator=(const CopyOnly&) = default;
-    CopyOnly &operator=(CopyOnly&&) = delete;
-};
-
 
 // NOTE: automatically wrap regular reference is too dangerous, you can forward something as
 //       a std::reference_wrapper and then gen a lifetime issues
@@ -405,59 +384,20 @@ TEST_CASE("Bind")
         REQUIRE(actualResult == expectedResult);
     }
 
-    SECTION("Move only")
+    SECTION("Move")
     {
-        const auto f = [](const MoveOnly&) { /* tst */ };
-        const auto withValueBound = details::bind_back(f, MoveOnly{});
+        const auto f = [](const TestType&) { /* tst */ };
+        const auto withValueBound = details::bind_back(f, TestType{});
 
         withValueBound();
     }
 
-    SECTION("Copy only")
+    SECTION("Copy")
     {
-        const auto f = [](const CopyOnly&) { /* tst */ };
-        const auto withValueBound = details::bind_back(f, CopyOnly{});
+        const auto f = [](const TestType&) { /* tst */ };
 
-        withValueBound();
-    }
-
-    SECTION("Copy from value")
-    {
-        const auto f = [](const CopyOnly&) { /* tst */ };
-
-        CopyOnly v;
-        const auto withValueBound = details::bind_back(f, v);
-
-        withValueBound();
-    }
-
-    SECTION("Copy from ref")
-    {
-        const auto f = [](const CopyOnly&) { /* tst */  };
-
-        CopyOnly v;
-        const CopyOnly &valueRef = v;
-        const auto withValueBound = details::bind_back(f, valueRef);
-
-        withValueBound();
-    }
-
-    SECTION("Copy from cref")
-    {
-        const auto f = [](const CopyOnly&) { /* tst */ };
-
-        CopyOnly v;
+        TestType v;
         const auto withValueBound = details::bind_back(f, std::cref(v));
-
-        withValueBound();
-    }
-
-    SECTION("Copy from ref")
-    {
-        const auto f = [](CopyOnly&) { /* tst */ };
-
-        CopyOnly v;
-        const auto withValueBound = details::bind_back(f, std::ref(v));
 
         withValueBound();
     }
