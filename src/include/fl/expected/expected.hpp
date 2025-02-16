@@ -274,37 +274,48 @@ namespace details {
     struct monostate{};
 
     template <class ...Args>
-    concept AtLeastONeArgIsRequired = sizeof ...(Args) >= 1;
+    concept ValidArgs =
+        sizeof ...(Args) >= 1 &&
+        (std::is_constructible_v<std::decay_t<Args>, Args> && ...) &&
+        (std::is_move_constructible_v<std::decay_t<Args>> && ...);
 
-    template<typename T>
-    inline constexpr bool always_false_v = false;
+    template <class F>
+    concept ValidFunction =
+        std::is_constructible_v<std::decay_t<F>, F> &&
+        std::is_move_constructible_v<std::decay_t<F>>;
 
-    template <class T>
-    decltype(auto) copy_if_non_movable(T &&v)
+    template<class T, class U>
+    struct copy_const : std::conditional<std::is_const_v<T>, U const, U> {};
+
+    template<class T, class U, class X = typename copy_const<std::remove_reference_t<T>, U>::type>
+    struct copy_value_category : std::conditional<std::is_lvalue_reference_v<T&&>, X&, X&&> {};
+
+    template <class T, class U>
+    struct type_forward_like : copy_value_category<T, std::remove_reference_t<U>> {};
+
+    template <class T, class U>
+    using type_forward_like_t = typename type_forward_like<T, U>::type;
+
+    template <ValidFunction F, ValidArgs... Args>
+    constexpr auto bind_front(F &&f, Args&&... args)
     {
-        if constexpr (!std::is_const_v<std::remove_reference_t<T>> &&
-                      !std::is_rvalue_reference_v<T> &&
-                      !std::is_move_constructible_v<std::remove_cvref_t<T>>) {
-            return static_cast<std::remove_cvref_t<T>>(v);
-        } else {
-            return std::forward<T>(v);
-        }
+        return [...f_args(std::forward<Args>(args)), b_f(std::forward<F>(f))]<class Self, class... T>(this Self&&, T&&... c_args)
+                    noexcept (std::is_nothrow_invocable_v<F, type_forward_like_t<Self, std::decay_t<Args>>..., T...>)
+                -> std::invoke_result_t<F, type_forward_like_t<Self, std::decay_t<Args>>..., T...>
+            {
+                return std::invoke(b_f, std::forward_like<Self>(f_args)..., std::forward<T>(c_args)...);
+            };
     }
 
-    template <class F, AtLeastONeArgIsRequired ...Args>
+    template <ValidFunction F, ValidArgs ...Args>
     [[nodiscard]] auto bind_back(F &&f, Args &&...args) noexcept
     {
-        return [...b_args = copy_if_non_movable(std::forward<Args>(args)), b_f = std::forward<F>(f)]<class ...F_Args>(F_Args &&...f_args) {
-            return std::invoke(b_f, std::forward<F_Args>(f_args)..., b_args...);
-        };
-    }
-
-    template <class F, AtLeastONeArgIsRequired ...Args>
-    [[nodiscard]] auto bind_front(F &&f, Args &&...args) noexcept
-    {
-        return [...f_args = copy_if_non_movable(std::forward<Args>(args)), b_f = std::forward<F>(f)]<class ...B_Args>(B_Args &&...b_args) {
-            return std::invoke(b_f, std::forward_like<Args>(f_args)..., b_args...);
-        };
+        return [...b_args(std::forward<Args>(args)), b_f(std::forward<F>(f))]<class Self, class... T>(this Self&&, T&&... c_args)
+                    noexcept (std::is_nothrow_invocable_v<F, T..., type_forward_like_t<Self, std::decay_t<Args>>...>)
+                -> std::invoke_result_t<F, T..., type_forward_like_t<Self, std::decay_t<Args>>...>
+            {
+                return std::invoke(b_f, std::forward<T>(c_args)..., std::forward_like<Self>(b_args)...);
+            };
     }
 } // namespace details
 
@@ -312,11 +323,14 @@ template<class T>
 concept is_expected = details::is_expected<std::remove_cvref_t<T>>;
 
 template <class AndThenF, class Error, class ...Args>
-concept CorrectAndThenFunction = requires {
+concept CorrectAndThenNoValueFunction = requires {
     requires std::is_invocable_v<AndThenF, Args...>;
     requires is_expected<std::invoke_result_t<AndThenF, Args...>>;
     requires std::is_same_v<typename std::invoke_result_t<AndThenF, Args...>::error_t, Error>;
 };
+
+template <class AndThenF, class Error, class Value, class ...Args>
+concept CorrectAndThenFunction = CorrectAndThenNoValueFunction<AndThenF, Error, Value, Args...>;
 
 template <class OrElseF, class Value, class Error>
 concept CorrectOrElseFunction = requires {
@@ -362,22 +376,29 @@ struct expected : public std::variant<std::remove_cvref_t<ValueOrMonostate<Value
 
     constexpr explicit operator bool() const { return has_value(); }
 
-    template<class Self, CorrectAndThenFunction<error_t, value_t> F>
-    [[nodiscard]] constexpr auto and_then(this Self&& self, F &&f) noexcept -> std::invoke_result_t<F, value_t>
+    template<class Self, class F, class ...Args>
+        requires (CorrectAndThenFunction<F, error_t, value_t, Args...>)
+    [[nodiscard]] constexpr auto and_then(this Self&& self, F &&f, Args &&...back_args)
+            noexcept (std::is_nothrow_invocable_v<F, value_t, Args...>)
+        -> std::invoke_result_t<F, value_t, Args...>
     {
         if (self.has_value()) {
-            return std::invoke(std::forward<F>(f), std::get<value_t>(std::forward<Self>(self)));
+            return std::invoke(
+                std::forward<F>(f), std::get<value_t>(std::forward<Self>(self)), std::forward<Args>(back_args)...);
         } else {
             return std::get<error_t>(std::forward<Self>(self));
         }
     }
 
-    template<class Self, CorrectAndThenFunction<error_t> F>
-        requires (std::is_void_v<value_t>)
-    [[nodiscard]] constexpr auto and_then(this Self&& self, F &&f) noexcept -> std::invoke_result_t<F>
+    template<class Self, class F, class ...Args>
+        requires (std::is_void_v<value_t>) &&
+                 (CorrectAndThenNoValueFunction<F, error_t, Args...>)
+    [[nodiscard]] constexpr auto and_then(this Self&& self, F &&f, Args &&...back_args)
+            noexcept (std::is_nothrow_invocable_v<F, error_t, Args...>)
+        -> std::invoke_result_t<F, Args...>
     {
         if (self.has_value()) {
-            return std::invoke(std::forward<F>(f));
+            return std::invoke(std::forward<F>(f), std::forward<Args>(back_args)...);
         } else {
             return std::get<error_t>(std::forward<Self>(self));
         }
