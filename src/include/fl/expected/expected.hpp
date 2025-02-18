@@ -323,14 +323,11 @@ template<class T>
 concept is_expected = details::is_expected<std::remove_cvref_t<T>>;
 
 template <class AndThenF, class Error, class ...Args>
-concept CorrectAndThenNoValueFunction = requires {
+concept CorrectAndThenFunction = requires {
     requires std::is_invocable_v<AndThenF, Args...>;
     requires is_expected<std::invoke_result_t<AndThenF, Args...>>;
     requires std::is_same_v<typename std::invoke_result_t<AndThenF, Args...>::error_t, Error>;
 };
-
-template <class AndThenF, class Error, class Value, class ...Args>
-concept CorrectAndThenFunction = CorrectAndThenNoValueFunction<AndThenF, Error, Value, Args...>;
 
 template <class OrElseF, class Value, class Error>
 concept CorrectOrElseFunction = requires {
@@ -359,6 +356,8 @@ using ValueOrMonostate = std::conditional_t<std::is_void_v<std::remove_cvref_t<V
 
 template <class Value>
 using VoidIfMonostate = std::conditional_t<std::is_same_v<details::monostate, Value>, std::void_t<>, Value>;
+
+struct bind_front_t{};
 
 template <CorrectValue Value, NonVoidError Error>
     requires ValueAndErrorHaveDifferentTypes<Value, Error> &&
@@ -391,8 +390,22 @@ struct expected : public std::variant<std::remove_cvref_t<ValueOrMonostate<Value
     }
 
     template<class Self, class F, class ...Args>
+        requires (CorrectAndThenFunction<F, error_t, Args..., value_t>)
+    [[nodiscard]] constexpr auto and_then(this Self&& self, bind_front_t, F &&f, Args &&...back_args)
+        noexcept (std::is_nothrow_invocable_v<F, Args..., value_t>)
+        -> std::invoke_result_t<F, Args..., value_t>
+    {
+        if (self.has_value()) {
+            return std::invoke(
+                std::forward<F>(f), std::forward<Args>(back_args)..., std::get<value_t>(std::forward<Self>(self)));
+        } else {
+            return std::get<error_t>(std::forward<Self>(self));
+        }
+    }
+
+    template<class Self, class F, class ...Args>
         requires (std::is_void_v<value_t>) &&
-                 (CorrectAndThenNoValueFunction<F, error_t, Args...>)
+                 (CorrectAndThenFunction<F, error_t, Args...>)
     [[nodiscard]] constexpr auto and_then(this Self&& self, F &&f, Args &&...back_args)
             noexcept (std::is_nothrow_invocable_v<F, error_t, Args...>)
         -> std::invoke_result_t<F, Args...>
