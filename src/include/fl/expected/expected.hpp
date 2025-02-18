@@ -357,6 +357,8 @@ using ValueOrMonostate = std::conditional_t<std::is_void_v<std::remove_cvref_t<V
 template <class Value>
 using VoidIfMonostate = std::conditional_t<std::is_same_v<details::monostate, Value>, std::void_t<>, Value>;
 
+struct bind_front_t{};
+
 template <CorrectValue Value, NonVoidError Error>
     requires ValueAndErrorHaveDifferentTypes<Value, Error> &&
              CannotCreateFromEachOther<Value, Error>
@@ -373,22 +375,43 @@ struct expected : public std::variant<std::remove_cvref_t<ValueOrMonostate<Value
 
     constexpr explicit operator bool() const { return has_value(); }
 
-    template<class Self, CorrectAndThenFunction<error_t, value_t> F>
-    [[nodiscard]] constexpr auto and_then(this Self&& self, F &&f) noexcept -> std::invoke_result_t<F, value_t>
+    template<class Self, class F, class ...Args>
+        requires (CorrectAndThenFunction<F, error_t, value_t, Args...>)
+    [[nodiscard]] constexpr auto and_then(this Self&& self, F &&f, Args &&...back_args)
+            noexcept (std::is_nothrow_invocable_v<F, value_t, Args...>)
+        -> std::invoke_result_t<F, value_t, Args...>
     {
         if (self.has_value()) {
-            return std::invoke(std::forward<F>(f), std::get<value_t>(std::forward<Self>(self)));
+            return std::invoke(
+                std::forward<F>(f), std::get<value_t>(std::forward<Self>(self)), std::forward<Args>(back_args)...);
         } else {
             return std::get<error_t>(std::forward<Self>(self));
         }
     }
 
-    template<class Self, CorrectAndThenFunction<error_t> F>
-        requires (std::is_void_v<value_t>)
-    [[nodiscard]] constexpr auto and_then(this Self&& self, F &&f) noexcept -> std::invoke_result_t<F>
+    template<class Self, class F, class ...Args>
+        requires (CorrectAndThenFunction<F, error_t, Args..., value_t>)
+    [[nodiscard]] constexpr auto and_then(this Self&& self, bind_front_t, F &&f, Args &&...back_args)
+        noexcept (std::is_nothrow_invocable_v<F, Args..., value_t>)
+        -> std::invoke_result_t<F, Args..., value_t>
     {
         if (self.has_value()) {
-            return std::invoke(std::forward<F>(f));
+            return std::invoke(
+                std::forward<F>(f), std::forward<Args>(back_args)..., std::get<value_t>(std::forward<Self>(self)));
+        } else {
+            return std::get<error_t>(std::forward<Self>(self));
+        }
+    }
+
+    template<class Self, class F, class ...Args>
+        requires (std::is_void_v<value_t>) &&
+                 (CorrectAndThenFunction<F, error_t, Args...>)
+    [[nodiscard]] constexpr auto and_then(this Self&& self, F &&f, Args &&...back_args)
+            noexcept (std::is_nothrow_invocable_v<F, error_t, Args...>)
+        -> std::invoke_result_t<F, Args...>
+    {
+        if (self.has_value()) {
+            return std::invoke(std::forward<F>(f), std::forward<Args>(back_args)...);
         } else {
             return std::get<error_t>(std::forward<Self>(self));
         }

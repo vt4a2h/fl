@@ -35,6 +35,11 @@ struct AddOne
     int op(int v) const { return v + 1; }
 };
 
+struct Add
+{
+    auto op(int lhs, int rhs) const -> expected<int, std::string> { return lhs + rhs; }
+};
+
 TEST_CASE("Create")
 {
     SECTION("Has default constructed value by default")
@@ -401,4 +406,42 @@ TEST_CASE("Bind")
 
         withValueBound();
     }
+}
+
+TEST_CASE("Built-in bind")
+{
+    const auto add = [] (int lhs, int rhs) -> expected<int, std::string> { return lhs + rhs; };
+
+    std::ignore = expected<int, std::string>{41}
+        .and_then(add, 1)
+        .and_then([](auto result) -> expected<int, std::string> {
+            const int expectedResult = 42;
+            REQUIRE(result == expectedResult);
+
+            return result;
+        })
+        .or_else([](const auto &) -> expected<int, std::string> {
+            FAIL();
+
+            return {};
+        });
+}
+
+TEST_CASE("Built-in bind front")
+{
+    Add adder;
+
+    std::ignore = expected<int, std::string>{41}
+        .and_then(bind_front_t{}, &Add::op, &adder, 1)
+        .and_then([](auto result) -> expected<int, std::string> {
+            const int expectedResult = 42;
+            REQUIRE(result == expectedResult);
+
+            return result;
+        })
+        .or_else([](const auto &) -> expected<int, std::string> {
+            FAIL();
+
+            return {};
+        });
 }
