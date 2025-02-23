@@ -329,11 +329,11 @@ concept CorrectAndThenFunction = requires {
     requires std::is_same_v<typename std::invoke_result_t<AndThenF, Args...>::error_t, Error>;
 };
 
-template <class OrElseF, class Value, class Error>
+template <class OrElseF, class Value, class ...Args>
 concept CorrectOrElseFunction = requires {
-    requires std::is_invocable_v<OrElseF, Error>;
-    requires is_expected<std::invoke_result_t<OrElseF, Error>>;
-    requires std::is_same_v<typename std::invoke_result_t<OrElseF, Error>::value_t, Value>;
+    requires std::is_invocable_v<OrElseF, Args...>;
+    requires is_expected<std::invoke_result_t<OrElseF, Args...>>;
+    requires std::is_same_v<typename std::invoke_result_t<OrElseF, Args...>::value_t, Value>;
 };
 
 template <class TransformF, class ...Args>
@@ -417,13 +417,27 @@ struct expected : public std::variant<std::remove_cvref_t<ValueOrMonostate<Value
         }
     }
 
-    template<class Self, CorrectOrElseFunction<value_t, error_t> F>
-    [[nodiscard]] constexpr auto or_else(this Self&& self, F &&f) noexcept -> std::invoke_result_t<F, error_t>
+    template<class Self, class F, class ...Args>
+        requires (CorrectOrElseFunction<F, value_t, error_t, Args...>)
+    [[nodiscard]] constexpr auto or_else(this Self&& self, F &&f, Args &&...args) noexcept
+        -> std::invoke_result_t<F, error_t, Args...>
     {
         if (self.has_value()) {
             return std::get<value_t>(std::forward<Self>(self));
         } else {
-            return std::invoke(std::forward<F>(f), std::get<error_t>(std::forward<Self>(self)));
+            return std::invoke(std::forward<F>(f), std::get<error_t>(std::forward<Self>(self)), std::forward<Args>(args)...);
+        }
+    }
+
+    template<class Self, class F, class ...Args>
+        requires (CorrectOrElseFunction<F, value_t, Args..., error_t>)
+    [[nodiscard]] constexpr auto or_else(this Self&& self, bind_front_t, F &&f, Args &&...args) noexcept
+        -> std::invoke_result_t<F, Args..., error_t>
+    {
+        if (self.has_value()) {
+            return std::get<value_t>(std::forward<Self>(self));
+        } else {
+            return std::invoke(std::forward<F>(f), std::forward<Args>(args)..., std::get<error_t>(std::forward<Self>(self)));
         }
     }
 
