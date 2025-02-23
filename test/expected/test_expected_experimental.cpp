@@ -40,6 +40,13 @@ struct Add
     auto op(int lhs, int rhs) const -> expected<int, std::string> { return lhs + rhs; }
 };
 
+struct AddPrefix
+{
+    auto op(const std::string &prefix, const std::string& s) const -> expected<int, std::string> {
+        return prefix + s;
+    }
+};
+
 TEST_CASE("Create")
 {
     SECTION("Has default constructed value by default")
@@ -410,38 +417,86 @@ TEST_CASE("Bind")
 
 TEST_CASE("Built-in bind")
 {
-    const auto add = [] (int lhs, int rhs) -> expected<int, std::string> { return lhs + rhs; };
+    SECTION("and_then")
+    {
+        const auto add = [](int lhs, int rhs) -> expected<int, std::string>
+        { return lhs + rhs; };
 
-    std::ignore = expected<int, std::string>{41}
-        .and_then(add, 1)
-        .and_then([](auto result) -> expected<int, std::string> {
-            const int expectedResult = 42;
-            REQUIRE(result == expectedResult);
+        std::ignore = expected<int, std::string>{41}
+            .and_then(add, 1)
+            .and_then([](auto result) -> expected<int, std::string> {
+                const int expectedResult = 42;
+                REQUIRE(result == expectedResult);
 
-            return result;
-        })
-        .or_else([](const auto &) -> expected<int, std::string> {
-            FAIL();
+                return result;
+            })
+            .or_else([](const auto &) -> expected<int, std::string> {
+                FAIL();
 
-            return {};
-        });
+                return {};
+            });
+    }
+
+    SECTION("or_else")
+    {
+        const auto addSuffixes =
+            []<class ...Args>(const std::string &lhs, Args &&...rhs) -> expected<int, std::string>
+                { return (lhs + ... + rhs); };
+
+        const std::string expectedResult{"42"};
+
+        std::ignore = expected<int, std::string>{""}
+            .or_else(addSuffixes, "4", "2")
+            .or_else([&expectedResult](const std::string& actualResult) -> expected<int, std::string> {
+                REQUIRE(actualResult == expectedResult);
+                return actualResult;
+            })
+            .and_then([](const auto&) -> expected<int, std::string> {
+                FAIL();
+
+                return {};
+            });
+    }
 }
 
 TEST_CASE("Built-in bind front")
 {
-    Add adder;
+    SECTION("and_then")
+    {
+        Add adder;
 
-    std::ignore = expected<int, std::string>{41}
-        .and_then(bind_front_t{}, &Add::op, &adder, 1)
-        .and_then([](auto result) -> expected<int, std::string> {
-            const int expectedResult = 42;
-            REQUIRE(result == expectedResult);
+        std::ignore = expected<int, std::string>{41}
+            .and_then(bind_front_t{}, &Add::op, &adder, 1)
+            .and_then([](auto result) -> expected<int, std::string> {
+                const int expectedResult = 42;
+                REQUIRE(result == expectedResult);
 
-            return result;
-        })
-        .or_else([](const auto &) -> expected<int, std::string> {
-            FAIL();
+                return result;
+            })
+            .or_else([](const auto &) -> expected<int, std::string>
+            {
+                FAIL();
 
-            return {};
-        });
+                return {};
+            });
+    }
+
+    SECTION("or_else")
+    {
+        AddPrefix adder;
+
+        const std::string expectedResult{"42"};
+
+        std::ignore = expected<int, std::string>{"2"}
+            .or_else(bind_front_t{}, &AddPrefix::op, &adder, "4")
+            .or_else([&expectedResult](const std::string& actualResult) -> expected<int, std::string> {
+                REQUIRE(actualResult == expectedResult);
+                return actualResult;
+            })
+            .and_then([](const auto&) -> expected<int, std::string> {
+                FAIL();
+
+                return {};
+            });
+    }
 }
