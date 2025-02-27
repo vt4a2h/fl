@@ -441,24 +441,38 @@ struct expected : public std::variant<std::remove_cvref_t<ValueOrMonostate<Value
         }
     }
 
-    template<class Self, CorrectTransformFunction<value_t> F>
-    [[nodiscard]] constexpr auto transform(this Self&& self, F &&f) noexcept
-        -> expected<std::invoke_result_t<F, value_t>, error_t>
+    template<class Self, class F, class ...Args>
+        requires (CorrectTransformFunction<F, value_t, Args...>)
+    [[nodiscard]] constexpr auto transform(this Self&& self, F &&f, Args &&...args) noexcept
+        -> expected<std::invoke_result_t<F, value_t, Args...>, error_t>
     {
         if (self.has_value()) {
-            return std::invoke(std::forward<F>(f), std::get<value_t>(std::forward<Self>(self)));
+            return std::invoke(std::forward<F>(f), std::get<value_t>(std::forward<Self>(self)), std::forward<Args>(args)...);
         } else {
             return std::get<error_t>(std::forward<Self>(self));
         }
     }
 
-    template<class Self, CorrectTransformFunction<> F>
-        requires (std::is_void_v<value_t>)
-    [[nodiscard]] constexpr auto transform(this Self&& self, F &&f) noexcept
-        -> expected<std::invoke_result_t<F>, error_t>
+    template<class Self, class F, class ...Args>
+        requires (CorrectTransformFunction<F, Args..., value_t>)
+    [[nodiscard]] constexpr auto transform(this Self&& self, bind_front_t, F &&f, Args &&...args) noexcept
+    -> expected<std::invoke_result_t<F, Args..., value_t>, error_t>
     {
         if (self.has_value()) {
-            return std::invoke(std::forward<F>(f));
+            return std::invoke(std::forward<F>(f), std::forward<Args>(args)..., std::get<value_t>(std::forward<Self>(self)));
+        } else {
+            return std::get<error_t>(std::forward<Self>(self));
+        }
+    }
+
+    template<class Self, class F, class ...Args>
+        requires (std::is_void_v<value_t>) &&
+                 (CorrectTransformFunction<F, Args...>)
+    [[nodiscard]] constexpr auto transform(this Self&& self, F &&f, Args &&...args) noexcept
+        -> expected<std::invoke_result_t<F, Args...>, error_t>
+    {
+        if (self.has_value()) {
+            return std::invoke(std::forward<F>(f), std::forward<Args>(args)...);
         } else {
             return std::get<error_t>(std::forward<Self>(self));
         }

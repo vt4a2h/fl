@@ -47,6 +47,11 @@ struct AddPrefix
     }
 };
 
+struct AddPrefixTransform
+{
+    auto op(const std::string &lhs, int rhs) const { return std::format("{}{}", lhs, std::to_string(rhs)); }
+};
+
 TEST_CASE("Create")
 {
     SECTION("Has default constructed value by default")
@@ -457,6 +462,28 @@ TEST_CASE("Built-in bind")
                 return {};
             });
     }
+
+    SECTION("transform")
+    {
+        using namespace std::string_literals;
+
+        const auto add = [](int lhs, int rhs){ return std::to_string(lhs + rhs); };
+
+        std::ignore = expected<int, Foo>{41}
+            .transform(add, 1)
+            .and_then([](const auto &result) -> expected<std::string, Foo> {
+                const auto expectedResult = "42"s;
+
+                REQUIRE(result == expectedResult);
+
+                return result;
+            })
+            .or_else([](const auto &) -> expected<std::string, Foo>  {
+                FAIL();
+
+                return {};
+            });
+    }
 }
 
 TEST_CASE("Built-in bind front")
@@ -494,6 +521,28 @@ TEST_CASE("Built-in bind front")
                 return actualResult;
             })
             .and_then([](const auto&) -> expected<int, std::string> {
+                FAIL();
+
+                return {};
+            });
+    }
+
+    SECTION("transform")
+    {
+        using namespace std::string_literals;
+
+        AddPrefixTransform adder;
+
+        std::ignore = expected<int, Foo>{2}
+            .transform(bind_front_t{}, &AddPrefixTransform::op, &adder, "4"s)
+            .and_then([](const auto &result) -> expected<std::string, Foo> {
+                const auto expectedResult = "42"s;
+                REQUIRE(result == expectedResult);
+
+                return result;
+            })
+            .or_else([](const auto &) -> expected<std::string, Foo>
+            {
                 FAIL();
 
                 return {};
