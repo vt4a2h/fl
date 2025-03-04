@@ -349,7 +349,9 @@ concept CorrectTransformErrorFunction = requires {
 };
 
 template <class NewType, class ValueType, class ErrorType>
-concept ReBindable = ImplicitlyConvertable<ValueType, NewType> || ImplicitlyConvertable<ErrorType, NewType>;
+concept ReBindable =
+    ImplicitlyConvertable<ValueType, NewType> ||
+    (ImplicitlyConvertable<ErrorType, NewType> && !std::is_void_v<NewType>);
 
 template <class Value>
 using ValueOrMonostate = std::conditional_t<std::is_void_v<std::remove_cvref_t<Value>>, details::monostate, Value>;

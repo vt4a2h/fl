@@ -23,9 +23,14 @@ struct ConvertableFromFoo{
     ConvertableFromFoo() = default;
     explicit(false) ConvertableFromFoo(const Foo&) {}
 };
+
 struct ExplicitlyConvertableFromFoo{
     ExplicitlyConvertableFromFoo() = default;
     explicit ExplicitlyConvertableFromFoo(const Foo&) {}
+};
+
+struct ConvertableFromVoid {
+    explicit(false) ConvertableFromVoid(void) {}
 };
 
 struct NonDefaultConstructable { NonDefaultConstructable() = delete; };
@@ -279,7 +284,8 @@ TEMPLATE_TEST_CASE_SIG("Rebind", "",
                         (expected<Foo, std::string>, ConvertableFromFoo, true),
                         (expected<Foo, std::string>, ExplicitlyConvertableFromFoo, false),
                         (expected<int, std::string>, double, true),
-                        (expected<Foo, std::string>, double, false)
+                        (expected<Foo, std::string>, double, false),
+                        (expected<Foo, ConvertableFromVoid>, void, false)
                        )
 {
     STATIC_REQUIRE(CanInvokeRebind<E, N> == C);
