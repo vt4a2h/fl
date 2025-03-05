@@ -342,10 +342,10 @@ concept CorrectTransformFunction = requires {
     requires !is_expected<std::invoke_result_t<TransformF, Args...>>;
 };
 
-template <class TransformF, class Error>
+template <class TransformF, class ...Args>
 concept CorrectTransformErrorFunction = requires {
-    requires std::is_invocable_v<TransformF, Error>;
-    requires !is_expected<std::invoke_result_t<TransformF, Error>>;
+    requires std::is_invocable_v<TransformF, Args...>;
+    requires !is_expected<std::invoke_result_t<TransformF, Args...>>;
 };
 
 template <class NewType, class ValueType, class ErrorType>
@@ -480,14 +480,27 @@ struct expected : public std::variant<std::remove_cvref_t<ValueOrMonostate<Value
         }
     }
 
-    template<class Self, CorrectTransformErrorFunction<error_t> F>
-    [[nodiscard]] constexpr auto transform_error(this Self&& self, F &&f) noexcept
-        -> expected<value_t, std::invoke_result_t<F, error_t>>
+    template<class Self, class F, class ...Args>
+        requires (CorrectTransformErrorFunction<F, error_t, Args...>)
+    [[nodiscard]] constexpr auto transform_error(this Self&& self, F &&f, Args &&...args) noexcept
+        -> expected<value_t, std::invoke_result_t<F, error_t, Args...>>
     {
         if (self.has_value()) {
             return std::get<value_t>(std::forward<Self>(self));
         } else {
-            return std::invoke(std::forward<F>(f), std::get<error_t>(std::forward<Self>(self)));
+            return std::invoke(std::forward<F>(f), std::get<error_t>(std::forward<Self>(self)), std::forward<Args>(args)...);
+        }
+    }
+
+    template<class Self, class F, class ...Args>
+        requires (CorrectTransformErrorFunction<F, Args..., error_t>)
+    [[nodiscard]] constexpr auto transform_error(this Self&& self, bind_front_t, F &&f, Args &&...args) noexcept
+    -> expected<value_t, std::invoke_result_t<F, Args..., error_t>>
+    {
+        if (self.has_value()) {
+            return std::get<value_t>(std::forward<Self>(self));
+        } else {
+            return std::invoke(std::forward<F>(f), std::forward<Args>(args)..., std::get<error_t>(std::forward<Self>(self)));
         }
     }
 

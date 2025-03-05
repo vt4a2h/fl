@@ -50,6 +50,10 @@ struct AddPrefix
     auto op(const std::string &prefix, const std::string& s) const -> expected<int, std::string> {
         return prefix + s;
     }
+
+    auto opNoExp(const std::string &prefix, const std::string& s) const {
+        return prefix + s;
+    }
 };
 
 struct AddPrefixTransform
@@ -490,6 +494,27 @@ TEST_CASE("Built-in bind")
                 return {};
             });
     }
+
+    SECTION("transform_error")
+    {
+        const auto addSuffixes =
+            []<class ...Args>(const std::string &lhs, Args &&...rhs) -> std::string
+            { return (lhs + ... + rhs); };
+
+        const std::string expectedResult{"42"};
+
+        std::ignore = expected<int, std::string>{""}
+            .transform_error(addSuffixes, "4", "2")
+            .or_else([&expectedResult](const std::string& actualResult) -> expected<int, std::string> {
+                REQUIRE(actualResult == expectedResult);
+                return actualResult;
+            })
+            .and_then([](const auto&) -> expected<int, std::string> {
+                FAIL();
+
+                return {};
+            });
+    }
 }
 
 TEST_CASE("Built-in bind front")
@@ -549,6 +574,25 @@ TEST_CASE("Built-in bind front")
             })
             .or_else([](const auto &) -> expected<std::string, Foo>
             {
+                FAIL();
+
+                return {};
+            });
+    }
+
+    SECTION("transform_error")
+    {
+        AddPrefix adder;
+
+        const std::string expectedResult{"42"};
+
+        std::ignore = expected<int, std::string>{"2"}
+            .transform_error(bind_front_t{}, &AddPrefix::opNoExp, &adder, "4")
+            .or_else([&expectedResult](const std::string& actualResult) -> expected<int, std::string> {
+                REQUIRE(actualResult == expectedResult);
+                return actualResult;
+            })
+            .and_then([](const auto&) -> expected<int, std::string> {
                 FAIL();
 
                 return {};
