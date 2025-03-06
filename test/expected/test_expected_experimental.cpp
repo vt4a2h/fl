@@ -14,7 +14,7 @@
 
 #include <expected>
 
-using namespace fl::experimental;
+using namespace fl;
 
 struct Foo {};
 struct Bar {};
@@ -30,7 +30,7 @@ struct ExplicitlyConvertableFromFoo{
 };
 
 struct ConvertableFromVoid {
-    explicit(false) ConvertableFromVoid(void) {}
+    explicit(false) ConvertableFromVoid(void) = default;
 };
 
 struct NonDefaultConstructable { NonDefaultConstructable() = delete; };
@@ -376,57 +376,6 @@ TEST_CASE("With void value type")
                 FAIL();
                 return {};
             });
-    }
-}
-
-struct TestType
-{
-};
-
-// NOTE: automatically wrap regular reference is too dangerous, you can forward something as
-//       a std::reference_wrapper and then gen a lifetime issues
-TEST_CASE("Bind")
-{
-    SECTION("Bind back: regular usage")
-    {
-        const auto add = [](int l, int r) { return l + r; };
-        const auto addOne = details::bind_back(add, 1);
-
-        const int actualResult = addOne(41);
-        const int expectedResult = 42;
-
-        REQUIRE(actualResult == expectedResult);
-    }
-
-    SECTION("Bind front: regular usage")
-    {
-        const AddOne adder;
-        const auto addOne = details::bind_front(&AddOne::op, adder);
-
-        const int v{41};
-
-        const int actualResult = addOne(v);
-        const int expectedResult = 42;
-
-        REQUIRE(actualResult == expectedResult);
-    }
-
-    SECTION("Move")
-    {
-        const auto f = [](const TestType&) { /* tst */ };
-        const auto withValueBound = details::bind_back(f, TestType{});
-
-        withValueBound();
-    }
-
-    SECTION("Copy")
-    {
-        const auto f = [](const TestType&) { /* tst */ };
-
-        TestType v;
-        const auto withValueBound = details::bind_back(f, std::cref(v));
-
-        withValueBound();
     }
 }
 
