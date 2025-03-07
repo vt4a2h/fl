@@ -68,12 +68,6 @@ concept CorrectTransformFunction = requires {
     requires !is_expected<std::invoke_result_t<TransformF, Args...>>;
 };
 
-template <class TransformF, class ...Args>
-concept CorrectTransformErrorFunction = requires {
-    requires std::is_invocable_v<TransformF, Args...>;
-    requires !is_expected<std::invoke_result_t<TransformF, Args...>>;
-};
-
 template <class NewType, class ValueType, class ErrorType>
 concept ReBindable =
     ImplicitlyConvertable<ValueType, NewType> ||
@@ -212,7 +206,7 @@ struct expected : public std::variant<std::remove_cvref_t<detail::ValueOrMonosta
     }
 
     template<class Self, class F, class ...Args>
-        requires (detail::CorrectTransformErrorFunction<F, error_t, Args...>)
+        requires (detail::CorrectTransformFunction<F, error_t, Args...>)
     [[nodiscard]] constexpr auto transform_error(this Self&& self, F &&f, Args &&...args) noexcept
         -> expected<value_t, std::invoke_result_t<F, error_t, Args...>>
     {
@@ -224,9 +218,9 @@ struct expected : public std::variant<std::remove_cvref_t<detail::ValueOrMonosta
     }
 
     template<class Self, class F, class ...Args>
-        requires (detail::CorrectTransformErrorFunction<F, Args..., error_t>)
+        requires (detail::CorrectTransformFunction<F, Args..., error_t>)
     [[nodiscard]] constexpr auto transform_error(this Self&& self, bind_front_t, F &&f, Args &&...args) noexcept
-    -> expected<value_t, std::invoke_result_t<F, Args..., error_t>>
+        -> expected<value_t, std::invoke_result_t<F, Args..., error_t>>
     {
         if (self.has_value()) {
             return std::get<value_t>(std::forward<Self>(self));
