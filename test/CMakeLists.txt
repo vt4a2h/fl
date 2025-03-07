@@ -28,7 +28,6 @@ target_sources(tests PRIVATE
     writer_utility_types.hpp
     test_writer_move_copy.cpp
 #    test_utils_ap_optional.cpp
-#    test_applicative_optional.cpp
     test_match.cpp
     expected/test_expected_experimental.cpp
 )
