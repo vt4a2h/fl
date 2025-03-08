@@ -79,6 +79,15 @@ using ValueOrMonostate = std::conditional_t<std::is_void_v<std::remove_cvref_t<V
 template <class Value>
 using VoidIfMonostate = std::conditional_t<std::is_same_v<monostate, Value>, std::void_t<>, Value>;
 
+template <class Error, class Arg>
+concept SameError =
+    is_expected<std::remove_cvref_t<Arg>> && std::is_same_v<typename std::remove_cvref_t<Arg>::error_t, Error>;
+
+template <class Error, class ...Args>
+concept ValidApArgs =
+    (... && (!is_expected<std::remove_cvref_t<Args>> || SameError<Error, std::remove_cvref_t<Args>>)
+    );
+
 } // namespace detail
 
 struct bind_front_t{};
@@ -227,6 +236,13 @@ struct expected : public std::variant<std::remove_cvref_t<detail::ValueOrMonosta
         } else {
             return std::invoke(std::forward<F>(f), std::forward<Args>(args)..., std::get<error_t>(std::forward<Self>(self)));
         }
+    }
+
+    template <class Self, class F, detail::ValidApArgs<error_t> ...Args>
+    [[nodiscard]] constexpr auto ap(this Self&& /*self*/, F &&/*f*/, Args &&.../*args*/) noexcept
+        /* -> */
+    {
+
     }
 
     template<detail::ReBindable<value_t, error_t> NewType, class Self>

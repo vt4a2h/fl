@@ -30,6 +30,7 @@ target_sources(tests PRIVATE
 #    test_utils_ap_optional.cpp
     test_match.cpp
     expected/test_expected_experimental.cpp
+    expected/test_expected_ap.cpp
 )
 
 #if (HAS_EXPECTED_RESULT)
