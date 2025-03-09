@@ -88,6 +88,34 @@ concept ValidApArgs =
     (... && (!is_expected<std::remove_cvref_t<Args>> || SameError<Error, std::remove_cvref_t<Args>>)
     );
 
+template <typename Arg>
+struct UnwarpOrForwardImpl {
+    using type = Arg;
+};
+
+template <typename Arg>
+    requires (is_expected<std::remove_cvref_t<Arg>>)
+struct UnwarpOrForwardImpl<Arg> {
+    using type = typename std::remove_cvref_t<Arg>::value_t;
+};
+
+// NOTE: unfortunately, conditional_t doest work here, even with type_identity :(
+template <class Arg>
+using UnwarpOrForward = typename UnwarpOrForwardImpl<Arg>::type;
+
+template <class Result, class Error>
+concept NotExpectedOrSameError = !is_expected<std::remove_cvref_t<Result>> || SameError<Error, std::remove_cvref_t<Result>>;
+
+template <class Error, class ...Args>
+concept CorrectErrorTypeOfAllExpectedArgs = (... && NotExpectedOrSameError<Args, Error>);
+
+template <class F, class Error, class ...Args>
+concept ApInvocable = requires {
+    requires CorrectErrorTypeOfAllExpectedArgs<Error, Args...>;
+    requires std::is_invocable_v<F, UnwarpOrForward<Args>...>;
+    requires NotExpectedOrSameError<std::invoke_result_t<F, UnwarpOrForward<Args>...>, Error>;
+};
+
 } // namespace detail
 
 struct bind_front_t{};
@@ -239,6 +267,7 @@ struct expected : public std::variant<std::remove_cvref_t<detail::ValueOrMonosta
     }
 
     template <class Self, class F, detail::ValidApArgs<error_t> ...Args>
+        requires (detail::ApInvocable<F, error_t, Args...>)
     [[nodiscard]] constexpr auto ap(this Self&& /*self*/, F &&/*f*/, Args &&.../*args*/) noexcept
         /* -> */
     {
