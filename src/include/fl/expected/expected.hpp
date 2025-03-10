@@ -116,6 +116,30 @@ concept ApInvocable = requires {
     requires NotExpectedOrSameError<std::invoke_result_t<F, UnwarpOrForward<Args>...>, Error>;
 };
 
+template <class E, class Arg>
+constexpr auto operator <<(std::optional<E> optErr, Arg &&arg) noexcept -> std::optional<E>
+{
+    if (optErr) {
+        return optErr;
+    }
+
+    if constexpr (is_expected<std::remove_cvref_t<Arg>>) {
+        if (arg.has_error()) {
+            return std::make_optional<E>(std::get<typename std::remove_cvref_t<Arg>::error_t>(std::forward<Arg>(arg)));
+        }
+    }
+
+    return std::nullopt;
+}
+
+// NOTE: we can combine errors as well. This will require "combine(T l, T r) -> T" (i.e. semigroup-like)
+template <class Error, class ...Args>
+    requires(CorrectErrorTypeOfAllExpectedArgs<Error, Args...>)
+constexpr std::optional<Error> firstError(Args &&...args)
+{
+    return (std::optional<Error>{} << ... << args);
+}
+
 } // namespace detail
 
 struct bind_front_t{};

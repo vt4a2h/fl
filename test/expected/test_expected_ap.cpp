@@ -59,3 +59,41 @@ TEMPLATE_TEST_CASE_SIG("Invokable function for applicative", "",
 {
     STATIC_REQUIRE(detail::ApInvocable<F, Error, Arg1, Arg2> == Valid);
 }
+
+TEST_CASE("First error")
+{
+    SECTION("No error")
+    {
+        const auto actualResult = detail::firstError<std::string>(3, 4., true);
+        const std::optional<std::string> expectedResult;
+
+        REQUIRE(actualResult == expectedResult);
+    }
+
+    SECTION("Only one error")
+    {
+        const auto actualResult =
+            detail::firstError<std::string>(expected<int, std::string>{"3"}, 4., true);
+        const auto expectedResult = std::make_optional<std::string>("3");
+
+        REQUIRE(actualResult == expectedResult);
+    }
+
+    SECTION("First errors of several")
+    {
+        const auto actualResult =
+            detail::firstError<std::string>(expected<int, std::string>{"3"}, expected<int, std::string>{"4."}, true);
+        const auto expectedResult = std::make_optional<std::string>("3");
+
+        REQUIRE(actualResult == expectedResult);
+    }
+
+    SECTION("Error not at the first place")
+    {
+        const auto actualResult =
+            detail::firstError<std::string>(expected<int, std::string>{3}, expected<int, std::string>{"4."}, true);
+        const auto expectedResult = std::make_optional<std::string>("4.");
+
+        REQUIRE(actualResult == expectedResult);
+    }
+}
