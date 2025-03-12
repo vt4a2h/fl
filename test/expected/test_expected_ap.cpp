@@ -97,3 +97,19 @@ TEST_CASE("First error")
         REQUIRE(actualResult == expectedResult);
     }
 }
+
+void noExpectedArgs(int, const std::string&){ /*nothing*/ }
+expected<void, std::string> noExpectedArgsRe(int, const std::string&) { return {}; }
+void oneExpectedArg(const expected<int, std::string>&, const std::string&){ /*nothing*/ }
+expected<void, std::string> oneExpectedArgRe(const expected<int, std::string>&, const std::string&){ return {}; }
+
+TEMPLATE_TEST_CASE_SIG("Result is valid", "",
+    ((class ActualT, class ExpectedT, bool Same), ActualT, ExpectedT, Same),
+     (detail::ApInvocableResult<decltype(&noExpectedArgs), std::string, int, std::string>, expected<void, std::string>, true),
+     (detail::ApInvocableResult<decltype(&noExpectedArgsRe), std::string, int, std::string>, expected<void, std::string>, true),
+     (detail::ApInvocableResult<decltype(&oneExpectedArg), std::string, expected<int, std::string>, std::string>, expected<void, std::string>, true),
+     (detail::ApInvocableResult<decltype(&oneExpectedArgRe), std::string, expected<int, std::string>, std::string>, expected<void, std::string>, true)
+)
+{
+    STATIC_REQUIRE(std::is_same_v<ActualT, ExpectedT> == Same);
+}

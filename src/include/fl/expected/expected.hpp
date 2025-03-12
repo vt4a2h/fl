@@ -140,6 +140,24 @@ constexpr std::optional<Error> firstError(Args &&...args)
     return (std::optional<Error>{} << ... << args);
 }
 
+template <class F, class ...Args>
+using JustInvocableResult = std::remove_cvref_t<std::invoke_result_t<F, UnwarpOrForward<Args>...>>;
+
+// NOTE: unfortunately, conditional_t doest work here, even with type_identity :(
+template <class Arg, class Error>
+struct WarpIntoExpectedOrForward {
+    using type = fl::expected<Arg, Error>;
+};
+
+template <class Arg, class Error>
+    requires (is_expected<std::remove_cvref_t<Arg>>)
+struct WarpIntoExpectedOrForward<Arg, Error> {
+    using type = Arg;
+};
+
+template <class F, class Error, class ...Args>
+using ApInvocableResult = typename WarpIntoExpectedOrForward<JustInvocableResult<F, Args...>, Error>::type;
+
 } // namespace detail
 
 struct bind_front_t{};
@@ -293,7 +311,7 @@ struct expected : public std::variant<std::remove_cvref_t<detail::ValueOrMonosta
     template <class Self, class F, detail::ValidApArgs<error_t> ...Args>
         requires (detail::ApInvocable<F, error_t, Args...>)
     [[nodiscard]] constexpr auto ap(this Self&& /*self*/, F &&/*f*/, Args &&.../*args*/) noexcept
-        /* -> */
+         -> detail::ApInvocableResult<F, error_t, Args...>
     {
 
     }
