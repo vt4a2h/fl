@@ -135,7 +135,7 @@ constexpr auto operator <<(std::optional<E> optErr, Arg &&arg) noexcept -> std::
 // NOTE: we can combine errors as well. This will require "combine(T l, T r) -> T" (i.e. semigroup-like)
 template <class Error, class ...Args>
     requires(CorrectErrorTypeOfAllExpectedArgs<Error, Args...>)
-constexpr std::optional<Error> firstError(Args &&...args)
+constexpr std::optional<Error> firstError(const Args&...args)
 {
     return (std::optional<Error>{} << ... << args);
 }
@@ -157,6 +157,19 @@ struct WarpIntoExpectedOrForward<Arg, Error> {
 
 template <class F, class Error, class ...Args>
 using ApInvocableResult = typename WarpIntoExpectedOrForward<JustInvocableResult<F, Args...>, Error>::type;
+
+template <class Arg>
+decltype(auto) unwrapOrForward(Arg &&arg)
+{
+    return std::forward<Arg>(arg);
+}
+
+template <class Arg>
+    requires (is_expected<std::remove_cvref_t<Arg>>)
+decltype(auto) unwrapOrForward(Arg &&arg)
+{
+    return std::get<typename std::remove_cvref_t<Arg>::value_t>(std::forward<Arg>(arg));
+}
 
 } // namespace detail
 
@@ -309,11 +322,18 @@ struct expected : public std::variant<std::remove_cvref_t<detail::ValueOrMonosta
     }
 
     template <class Self, class F, detail::ValidApArgs<error_t> ...Args>
-        requires (detail::ApInvocable<F, error_t, Args...>)
-    [[nodiscard]] constexpr auto ap(this Self&& /*self*/, F &&/*f*/, Args &&.../*args*/) noexcept
-         -> detail::ApInvocableResult<F, error_t, Args...>
+        requires (detail::ApInvocable<F, error_t, value_t, Args...>)
+    [[nodiscard]] constexpr auto ap(this Self&& self, F &&f, Args &&...args) noexcept
+         -> detail::ApInvocableResult<F, error_t, value_t, Args...>
     {
-
+        if (auto firstError = detail::firstError<error_t>(self, args...)) {
+            return std::move(firstError).value();
+        } else {
+            return std::invoke(
+                std::forward<F>(f),
+                    std::get<value_t>(std::forward<Self>(self)),
+                        detail::unwrapOrForward(std::forward<Args>(args))...);
+        }
     }
 
     template<detail::ReBindable<value_t, error_t> NewType, class Self>

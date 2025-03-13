@@ -12,6 +12,8 @@
 
 #include <fl/expected/expected.hpp>
 
+#include <fmt/format.h>
+
 using namespace fl;
 
 TEMPLATE_TEST_CASE_SIG("Valid arguments for applicative", "",
@@ -112,4 +114,80 @@ TEMPLATE_TEST_CASE_SIG("Result is valid", "",
 )
 {
     STATIC_REQUIRE(std::is_same_v<ActualT, ExpectedT> == Same);
+}
+
+using Expected = expected<int, std::string>;
+
+template <class E, class V>
+void checkError(E &&result, V &&expectedError)
+{
+    std::ignore = result.and_then([](const auto &v) -> Expected {
+        FAIL(fmt::format("Get a value {} instead of an error.", v));
+        return {};
+    }).or_else([&expectedError](const auto& actualError) -> Expected {
+        REQUIRE(expectedError == actualError);
+        return {};
+    });
+}
+
+TEST_CASE("Error if expected contains error")
+{
+    const std::string expectedError{"error message"};
+
+    Expected e{expectedError};
+
+    const auto result = e.ap([](int, int) { return 42; }, 1);
+
+    checkError(result, expectedError);
+}
+
+TEST_CASE("First error [invoked]")
+{
+    const auto&[arg2, arg3, expectedError] = GENERATE(table<Expected, Expected, std::string>({
+        {Expected{"Wrong arg1"}, Expected{3}, "Wrong arg1"},
+        {Expected{2}, Expected{"Wrong arg2"}, "Wrong arg2"},
+    }));
+
+    Expected e{1};
+
+    const auto add = [](int a1, int a2, int a3) { return a1 + a2 + a3; };
+
+    const auto result = e.ap(add, arg2, arg3);
+
+    checkError(result, expectedError);
+}
+
+template <class E, class V>
+void checkValue(E &&result, V &&expectedValue)
+{
+    std::ignore = result.and_then([&expectedValue](const auto &actualValue) -> Expected {
+        REQUIRE(actualValue == expectedValue);
+        return {};
+    }).or_else([](const auto& e) -> Expected {
+        FAIL(fmt::format("Get an error {} instead of a value.", e));
+        return {};
+    });
+}
+
+TEST_CASE("Value [invoked]")
+{
+    const Expected e{1};
+
+    SECTION("All regular values")
+    {
+        const auto result = e.ap([](int a1, int a2) { return a1 + a2; }, 1);
+        checkValue(result, 2);
+    }
+
+    SECTION("All expected values")
+    {
+        const auto result = e.ap([](int a1, int a2, int a3) { return a1 + a2 + a3; }, Expected{1}, Expected{1});
+        checkValue(result, 3);
+    }
+
+    SECTION("Some expected values")
+    {
+        const auto result = e.ap([](int a1, int a2, int a3) { return a1 + a2 + a3; }, 1, Expected{1});
+        checkValue(result, 3);
+    }
 }
