@@ -34,19 +34,29 @@ concept NonVoidError = !std::is_void_v<std::remove_cvref_t<Error>>;
 } // namespace detail
 
 template <detail::CorrectValue Value, detail::NonVoidError Error>
-    requires (detail::ValueAndErrorHaveDifferentTypes<Value, Error>) &&
-             (detail::CannotCreateFromEachOther<Value, Error>)
+requires (detail::ValueAndErrorHaveDifferentTypes<Value, Error>) &&
+(detail::CannotCreateFromEachOther<Value, Error>)
 struct expected;
 
 namespace detail
 {
-struct monostate{};
 
 template<class>
 constexpr bool is_expected = false;
 
 template<class V, class E>
 constexpr bool is_expected<fl::expected<V, E>> = true;
+
+} // namespace detail
+
+struct bind_front_t{};
+
+template<class T>
+concept IsExpected = detail::is_expected<std::remove_cvref_t<T>>;
+
+namespace detail
+{
+struct monostate{};
 
 template <class AndThenF, class Error, class ...Args>
 concept CorrectAndThenFunction = requires {
@@ -171,12 +181,42 @@ decltype(auto) unwrapOrForward(Arg &&arg)
     return std::get<typename std::remove_cvref_t<Arg>::value_t>(std::forward<Arg>(arg));
 }
 
+template<class>
+constexpr bool dependent_false = false;
+
+template <class E>
+concept CustomValueHandlerFound = requires {
+    requires is_expected<std::remove_cvref_t<E>>;
+    handle_bad_value(typename std::remove_cvref_t<E>::error_t{});
+};
+
+template <class E>
+concept CustomErrorHandlerFound = requires {
+    requires is_expected<std::remove_cvref_t<E>>;
+    handle_bad_error(typename std::remove_cvref_t<E>::value_t{});
+};
+
+template <class>
+constexpr void default_handle_bad_value()
+{
+    if (std::is_constant_evaluated()) {
+        throw "Expected object contains error";
+    } else {
+        std::terminate();
+    }
+}
+
+template <class>
+constexpr void default_handle_bad_error()
+{
+    if (std::is_constant_evaluated()) {
+        throw "Expected object contains value";
+    } else {
+        std::terminate();
+    }
+}
+
 } // namespace detail
-
-struct bind_front_t{};
-
-template<class T>
-concept is_expected = detail::is_expected<std::remove_cvref_t<T>>;
 
 template <detail::CorrectValue Value, detail::NonVoidError Error>
     requires (detail::ValueAndErrorHaveDifferentTypes<Value, Error>) &&
@@ -191,6 +231,49 @@ struct expected : public std::variant<std::remove_cvref_t<detail::ValueOrMonosta
 
     [[nodiscard]] constexpr bool has_value() const { return std::holds_alternative<detail::ValueOrMonostate<Value>>(*this); }
     [[nodiscard]] constexpr bool has_error() const { return std::holds_alternative<Error>(*this); }
+
+    template<class Self>
+        requires (!std::is_void_v<value_t>)
+    [[nodiscard]] constexpr auto&& value(this Self&& self)
+    {
+        if (self.has_error()) {
+            if constexpr (detail::CustomValueHandlerFound<Self>) {
+                handle_bad_value(std::get<error_t>(std::forward<Self>(self)));
+            } else {
+                detail::default_handle_bad_value<Self>();
+            }
+        }
+
+        return std::get<value_t>(std::forward<Self>(self));
+    }
+
+    template<class Self>
+        requires (std::is_void_v<value_t>)
+    constexpr void value(this Self&& self)
+    {
+        if (self.has_error()) {
+            if constexpr (detail::CustomValueHandlerFound<Self>) {
+                handle_bad_value(std::get<error_t>(std::forward<Self>(self)));
+            } else {
+                detail::default_handle_bad_value<Self>();
+            }
+        }
+    }
+
+    template<class Self>
+        requires (!std::is_void_v<error_t>)
+    [[nodiscard]] constexpr auto&& error(this Self&& self)
+    {
+        if (self.has_value()) {
+            if constexpr (detail::CustomErrorHandlerFound<Self>) {
+                handle_bad_error(std::get<value_t>(std::forward<Self>(self)));
+            } else {
+                detail::default_handle_bad_error<Self>();
+            }
+        }
+
+        return std::get<error_t>(std::forward<Self>(self));
+    }
 
     constexpr explicit operator bool() const { return has_value(); }
 

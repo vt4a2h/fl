@@ -546,3 +546,73 @@ TEST_CASE("Built-in bind front")
             });
     }
 }
+
+namespace foo {
+    struct Error {};
+    struct Value {};
+
+    void handle_bad_value(const Error&)
+    {
+        throw std::logic_error("Bad value");
+        // NOTE: should terminate, but it makes test more complex
+    }
+
+    void handle_bad_error(const Value&)
+    {
+        throw std::logic_error("Bad error");
+        // NOTE: should terminate, but it makes test more complex
+    }
+}
+
+TEST_CASE("Value getter")
+{
+    SECTION("Regular getter")
+    {
+        constexpr int expectedValue = 42;
+
+        const expected<int, std::string> e{expectedValue};
+
+        const auto actualValue = e.value();
+
+        REQUIRE(expectedValue == actualValue);
+    }
+
+    SECTION("Custom handle found")
+    {
+        STATIC_REQUIRE(detail::CustomValueHandlerFound<expected<foo::Value, foo::Error>>);
+    }
+
+    SECTION("Custom handler invoked")
+    {
+        const expected<foo::Value, foo::Error> e{foo::Error{}};
+
+        REQUIRE_THROWS_AS(e.value(), std::logic_error);
+    }
+}
+
+TEST_CASE("Error getter")
+{
+    SECTION("Regular getter")
+    {
+        const std::string expectedError{"42"};
+
+        expected<int, std::string> e{expectedError};
+
+        const auto actualError = e.error();
+
+        REQUIRE(expectedError == actualError);
+    }
+
+    SECTION("Custom handle found")
+    {
+        STATIC_REQUIRE(detail::CustomErrorHandlerFound<expected<foo::Value, foo::Error>>);
+    }
+
+    SECTION("Custom handler invoked")
+    {
+        const expected<foo::Value, foo::Error> e{foo::Value{}};
+
+        REQUIRE_THROWS_AS(e.error(), std::logic_error);
+    }
+}
+
