@@ -47,6 +47,12 @@ constexpr bool is_expected = false;
 template<class V, class E>
 constexpr bool is_expected<fl::expected<V, E>> = true;
 
+template<class>
+constexpr bool is_optional = false;
+
+template<class V>
+constexpr bool is_optional<std::optional<V>> = true;
+
 } // namespace detail
 
 struct bind_front_t{};
@@ -139,8 +145,35 @@ constexpr auto operator <<(std::optional<E> optErr, Arg &&arg) noexcept -> std::
 
 // NOTE: we can combine errors as well. This will require "combine(T l, T r) -> T" (i.e. semigroup-like)
 template <class Error, class ...Args>
-    requires(ValidApArgs<Error, Args...>)
+    requires (ValidApArgs<Error, Args...>)
 constexpr std::optional<Error> firstError(const Args&...args)
+{
+    return (std::optional<Error>{} << ... << args);
+}
+
+template <class T>
+concept CanCombine = requires(T a1, T a2) {
+    { combine(a1, a2) } -> std::same_as<T>;
+};
+
+template <class E, class Arg>
+    requires (CanCombine<std::optional<std::decay_t<E>>> &&
+              CanCombine<std::decay_t<E>>)
+constexpr auto operator <<(std::optional<E> optErr, Arg &&arg) noexcept -> std::optional<E>
+{
+    if constexpr (is_expected<std::decay_t<Arg>>) {
+        if (arg.has_error()) {
+            return combine(std::move(optErr),
+                           std::make_optional<E>(std::get<typename std::decay_t<Arg>::error_t>(std::forward<Arg>(arg))));
+        }
+    }
+
+    return optErr;
+}
+
+template <class Error, class ...Args>
+    requires (ValidApArgs<Error, Args...>)
+constexpr std::optional<Error> combineErrors(const Args&...args)
 {
     return (std::optional<Error>{} << ... << args);
 }

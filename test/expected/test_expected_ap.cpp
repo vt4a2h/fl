@@ -191,3 +191,79 @@ TEST_CASE("Value [invoked]")
         checkValue(result, 3);
     }
 }
+
+namespace
+{
+
+struct Error
+{
+    std::string data;
+    constexpr bool operator ==(const Error &rhs) const = default;
+};
+
+constexpr auto format_as(const std::optional<Error> &e) { return e ? fmt::to_string(e->data) : std::string{}; }
+
+auto combine(Error e1, Error e2)
+{
+    return Error{.data = fmt::format("{};{}", std::move(e1.data), std::move(e2.data))};
+}
+
+template <class T>
+    requires (detail::is_optional<std::decay_t<T>>)
+std::decay_t<T> combine(T &&a1, T &&a2)
+{
+    if (a1 && a2) {
+        return combine(*std::forward<T>(a1), *std::forward<T>(a2));
+    }
+
+    if (a1) {
+        return std::forward<T>(a1);
+    }
+
+    if (a2) {
+        return std::forward<T>(a2);
+    }
+
+    return std::nullopt;
+}
+
+} // namespace
+
+namespace Catch {
+template<>
+struct StringMaker<std::optional<Error>> {
+    static std::string convert(std::optional<Error> const& value) {
+        return fmt::to_string(value);
+    }
+};
+}
+
+TEST_CASE("Combine errors")
+{
+    SECTION("Can combine types")
+    {
+        STATIC_REQUIRE(detail::CanCombine<Error>);
+        STATIC_REQUIRE(detail::CanCombine<std::optional<Error>>);
+    }
+
+    SECTION("Combine values")
+    {
+        using MyExpected = expected<int, Error>;
+        const auto [data, expectedResult] =
+            GENERATE(table<std::tuple<MyExpected, MyExpected, MyExpected>, std::optional<Error>>({
+                {{MyExpected{Error{"1"}}, MyExpected{Error{"2"}}, MyExpected{Error{"3"}}}, Error{.data = "1;2;3"}},
+                {{MyExpected{42}, MyExpected{Error{"2"}}, MyExpected{Error{"3"}}}, Error{.data = "2;3"}},
+                {{MyExpected{42}, MyExpected{42}, MyExpected{Error{"3"}}}, Error{.data = "3"}},
+                {{MyExpected{Error{"1"}}, MyExpected{42}, MyExpected{Error{"3"}}}, Error{.data = "1;3"}},
+                {{MyExpected{Error{"1"}}, MyExpected{42}, MyExpected{42}}, Error{.data = "1"}},
+                {{MyExpected{42}, MyExpected{Error{"2"}}, MyExpected{42}}, Error{.data = "2"}},
+                {{MyExpected{42}, MyExpected{42}, MyExpected{42}}, std::nullopt},
+            }));
+
+        const auto combine =
+            []<class ...Args>(Args &&...args) { return detail::combineErrors<Error>(std::forward<Args>(args)...);};
+        const auto actualResult = std::apply(combine, data);
+
+        REQUIRE(actualResult == expectedResult);
+    }
+}
