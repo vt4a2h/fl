@@ -17,19 +17,19 @@ namespace detail
 
 template<class Value>
 concept CorrectValue =
-std::is_default_constructible_v<std::remove_cvref_t<Value>> || std::is_void_v<std::remove_cvref_t<Value>>;
+std::is_default_constructible_v<std::decay_t<Value>> || std::is_void_v<std::decay_t<Value>>;
 
 template<class Value, class Error>
-concept ValueAndErrorHaveDifferentTypes = !std::is_same_v<std::remove_cvref_t<Value>, std::remove_cvref_t<Error>>;
+concept ValueAndErrorHaveDifferentTypes = !std::is_same_v<std::decay_t<Value>, std::decay_t<Error>>;
 
 template<class From, class To>
-concept ImplicitlyConvertable = std::is_convertible_v<std::remove_cvref_t<From>, std::remove_cvref_t<To>>;
+concept ImplicitlyConvertable = std::is_convertible_v<std::decay_t<From>, std::decay_t<To>>;
 
 template<class Value, class Error>
 concept CannotCreateFromEachOther = !ImplicitlyConvertable<Value, Error> && !ImplicitlyConvertable<Error, Value>;
 
 template<class Error>
-concept NonVoidError = !std::is_void_v<std::remove_cvref_t<Error>>;
+concept NonVoidError = !std::is_void_v<std::decay_t<Error>>;
 
 } // namespace detail
 
@@ -52,7 +52,7 @@ constexpr bool is_expected<fl::expected<V, E>> = true;
 struct bind_front_t{};
 
 template<class T>
-concept IsExpected = detail::is_expected<std::remove_cvref_t<T>>;
+concept IsExpected = detail::is_expected<std::decay_t<T>>;
 
 namespace detail
 {
@@ -84,19 +84,18 @@ concept ReBindable =
     (ImplicitlyConvertable<ErrorType, NewType> && !std::is_void_v<NewType>);
 
 template <class Value>
-using ValueOrMonostate = std::conditional_t<std::is_void_v<std::remove_cvref_t<Value>>, monostate, Value>;
+using ValueOrMonostate = std::conditional_t<std::is_void_v<std::decay_t<Value>>, monostate, Value>;
 
 template <class Value>
 using VoidIfMonostate = std::conditional_t<std::is_same_v<monostate, Value>, std::void_t<>, Value>;
 
 template <class Error, class Arg>
 concept SameError =
-    is_expected<std::remove_cvref_t<Arg>> && std::is_same_v<typename std::remove_cvref_t<Arg>::error_t, Error>;
+    is_expected<std::decay_t<Arg>> && std::is_same_v<typename std::decay_t<Arg>::error_t, Error>;
 
 template <class Error, class ...Args>
 concept ValidApArgs =
-    (... && (!is_expected<std::remove_cvref_t<Args>> || SameError<Error, std::remove_cvref_t<Args>>)
-    );
+    (... && (!is_expected<std::decay_t<Args>> || SameError<Error, std::decay_t<Args>>));
 
 template <typename Arg>
 struct UnwarpOrForwardImpl {
@@ -104,9 +103,9 @@ struct UnwarpOrForwardImpl {
 };
 
 template <typename Arg>
-    requires (is_expected<std::remove_cvref_t<Arg>>)
+    requires (is_expected<std::decay_t<Arg>>)
 struct UnwarpOrForwardImpl<Arg> {
-    using type = typename std::remove_cvref_t<Arg>::value_t;
+    using type = typename std::decay_t<Arg>::value_t;
 };
 
 // NOTE: unfortunately, conditional_t doest work here, even with type_identity :(
@@ -114,7 +113,7 @@ template <class Arg>
 using UnwarpOrForward = typename UnwarpOrForwardImpl<Arg>::type;
 
 template <class Result, class Error>
-concept NotExpectedOrSameError = !is_expected<std::remove_cvref_t<Result>> || SameError<Error, std::remove_cvref_t<Result>>;
+concept NotExpectedOrSameError = !is_expected<std::decay_t<Result>> || SameError<Error, std::decay_t<Result>>;
 
 template <class Error, class ...Args>
 concept CorrectErrorTypeOfAllExpectedArgs = (... && NotExpectedOrSameError<Args, Error>);
@@ -133,9 +132,9 @@ constexpr auto operator <<(std::optional<E> optErr, Arg &&arg) noexcept -> std::
         return optErr;
     }
 
-    if constexpr (is_expected<std::remove_cvref_t<Arg>>) {
+    if constexpr (is_expected<std::decay_t<Arg>>) {
         if (arg.has_error()) {
-            return std::make_optional<E>(std::get<typename std::remove_cvref_t<Arg>::error_t>(std::forward<Arg>(arg)));
+            return std::make_optional<E>(std::get<typename std::decay_t<Arg>::error_t>(std::forward<Arg>(arg)));
         }
     }
 
@@ -151,7 +150,7 @@ constexpr std::optional<Error> firstError(const Args&...args)
 }
 
 template <class F, class ...Args>
-using JustInvocableResult = std::remove_cvref_t<std::invoke_result_t<F, UnwarpOrForward<Args>...>>;
+using JustInvocableResult = std::decay_t<std::invoke_result_t<F, UnwarpOrForward<Args>...>>;
 
 // NOTE: unfortunately, conditional_t doest work here, even with type_identity :(
 template <class Arg, class Error>
@@ -160,7 +159,7 @@ struct WarpIntoExpectedOrForward {
 };
 
 template <class Arg, class Error>
-    requires (is_expected<std::remove_cvref_t<Arg>>)
+    requires (is_expected<std::decay_t<Arg>>)
 struct WarpIntoExpectedOrForward<Arg, Error> {
     using type = Arg;
 };
@@ -169,16 +168,16 @@ template <class F, class Error, class ...Args>
 using ApInvocableResult = typename WarpIntoExpectedOrForward<JustInvocableResult<F, Args...>, Error>::type;
 
 template <class Arg>
-decltype(auto) unwrapOrForward(Arg &&arg)
+constexpr decltype(auto) unwrapOrForward(Arg &&arg)
 {
     return std::forward<Arg>(arg);
 }
 
 template <class Arg>
-    requires (is_expected<std::remove_cvref_t<Arg>>)
-decltype(auto) unwrapOrForward(Arg &&arg)
+    requires (is_expected<std::decay_t<Arg>>)
+constexpr decltype(auto) unwrapOrForward(Arg &&arg)
 {
-    return std::get<typename std::remove_cvref_t<Arg>::value_t>(std::forward<Arg>(arg));
+    return std::get<typename std::decay_t<Arg>::value_t>(std::forward<Arg>(arg));
 }
 
 template<class>
@@ -186,14 +185,14 @@ constexpr bool dependent_false = false;
 
 template <class E>
 concept CustomValueHandlerFound = requires {
-    requires is_expected<std::remove_cvref_t<E>>;
-    handle_bad_value(typename std::remove_cvref_t<E>::error_t{});
+    requires is_expected<std::decay_t<E>>;
+    handle_bad_value(typename std::decay_t<E>::error_t{});
 };
 
 template <class E>
 concept CustomErrorHandlerFound = requires {
-    requires is_expected<std::remove_cvref_t<E>>;
-    handle_bad_error(typename std::remove_cvref_t<E>::value_t{});
+    requires is_expected<std::decay_t<E>>;
+    handle_bad_error(typename std::decay_t<E>::value_t{});
 };
 
 template <class>
@@ -221,9 +220,9 @@ constexpr void default_handle_bad_error()
 template <detail::CorrectValue Value, detail::NonVoidError Error>
     requires (detail::ValueAndErrorHaveDifferentTypes<Value, Error>) &&
              (detail::CannotCreateFromEachOther<Value, Error>)
-struct expected : public std::variant<std::remove_cvref_t<detail::ValueOrMonostate<Value>>, std::remove_cvref_t<Error>>
+struct expected : public std::variant<std::decay_t<detail::ValueOrMonostate<Value>>, std::decay_t<Error>>
 {
-    using variant_self_t = std::variant<std::remove_cvref_t<detail::ValueOrMonostate<Value>>, std::remove_cvref_t<Error>>;
+    using variant_self_t = std::variant<std::decay_t<detail::ValueOrMonostate<Value>>, std::decay_t<Error>>;
     using value_t = detail::VoidIfMonostate<std::variant_alternative_t<0, variant_self_t>>;
     using error_t = std::variant_alternative_t<1, variant_self_t>;
 
