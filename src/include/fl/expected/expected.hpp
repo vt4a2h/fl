@@ -405,8 +405,9 @@ struct expected : public std::variant<std::decay_t<detail::ValueOrMonostate<Valu
 
     template <class Self, class F, detail::ValidApArgs<error_t> ...Args>
         requires (detail::ApInvocable<F, error_t, value_t, Args...>)
-    [[nodiscard]] constexpr auto ap(this Self&& self, F &&f, Args &&...args) noexcept
-         -> detail::ApInvocableResult<F, error_t, value_t, Args...>
+    [[nodiscard]] constexpr auto ap(this Self&& self, F &&f, Args &&...args)
+        noexcept(std::is_nothrow_invocable_v<F, value_t, detail::UnwarpOrForward<Args>...>)
+        -> detail::ApInvocableResult<F, error_t, value_t, Args...>
     {
         if (auto firstError = detail::firstError<error_t>(self, args...)) {
             return std::move(firstError).value();
