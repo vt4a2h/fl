@@ -93,9 +93,11 @@ template <class Error, class Arg>
 concept SameError =
     is_expected<std::decay_t<Arg>> && std::is_same_v<typename std::decay_t<Arg>::error_t, Error>;
 
+template <class Result, class Error>
+concept NotExpectedOrSameError = !is_expected<std::decay_t<Result>> || SameError<Error, std::decay_t<Result>>;
+
 template <class Error, class ...Args>
-concept ValidApArgs =
-    (... && (!is_expected<std::decay_t<Args>> || SameError<Error, std::decay_t<Args>>));
+concept ValidApArgs = (... && NotExpectedOrSameError<Args, Error>);
 
 template <typename Arg>
 struct UnwarpOrForwardImpl {
@@ -112,15 +114,9 @@ struct UnwarpOrForwardImpl<Arg> {
 template <class Arg>
 using UnwarpOrForward = typename UnwarpOrForwardImpl<Arg>::type;
 
-template <class Result, class Error>
-concept NotExpectedOrSameError = !is_expected<std::decay_t<Result>> || SameError<Error, std::decay_t<Result>>;
-
-template <class Error, class ...Args>
-concept CorrectErrorTypeOfAllExpectedArgs = (... && NotExpectedOrSameError<Args, Error>);
-
 template <class F, class Error, class ...Args>
 concept ApInvocable = requires {
-    requires CorrectErrorTypeOfAllExpectedArgs<Error, Args...>;
+    requires ValidApArgs<Error, Args...>;
     requires std::is_invocable_v<F, UnwarpOrForward<Args>...>;
     requires NotExpectedOrSameError<std::invoke_result_t<F, UnwarpOrForward<Args>...>, Error>;
 };
@@ -143,7 +139,7 @@ constexpr auto operator <<(std::optional<E> optErr, Arg &&arg) noexcept -> std::
 
 // NOTE: we can combine errors as well. This will require "combine(T l, T r) -> T" (i.e. semigroup-like)
 template <class Error, class ...Args>
-    requires(CorrectErrorTypeOfAllExpectedArgs<Error, Args...>)
+    requires(ValidApArgs<Error, Args...>)
 constexpr std::optional<Error> firstError(const Args&...args)
 {
     return (std::optional<Error>{} << ... << args);
@@ -403,7 +399,7 @@ struct expected : public std::variant<std::decay_t<detail::ValueOrMonostate<Valu
         }
     }
 
-    template <class Self, class F, detail::ValidApArgs<error_t> ...Args>
+    template <class Self, class F, class ...Args>
         requires (detail::ApInvocable<F, error_t, value_t, Args...>)
     [[nodiscard]] constexpr auto ap(this Self&& self, F &&f, Args &&...args)
         noexcept(std::is_nothrow_invocable_v<F, value_t, detail::UnwarpOrForward<Args>...>)
