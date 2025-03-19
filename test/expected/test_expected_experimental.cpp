@@ -399,6 +399,19 @@ TEST_CASE("Built-in bind")
             });
     }
 
+    SECTION("With references")
+    {
+        const auto assignTo = [](int lhs, int &rhs) -> expected<int, std::string>
+        { return rhs = lhs; };
+
+        constexpr int expectedResult = 42;
+        int actualResult{};
+
+        std::ignore = expected<int, std::string>{expectedResult}.and_then(assignTo, actualResult);
+
+        REQUIRE(actualResult == expectedResult);
+    }
+
     SECTION("or_else")
     {
         const auto addSuffixes =
