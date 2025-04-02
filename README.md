@@ -31,7 +31,7 @@ There is a non-official vcpkg registry I created for this package. In order to u
       "packages": [
         "fl"
       ],
-      "baseline": "66f78b6df4a1a97e2ebe8958a910433d9439fa72"
+      "baseline": "a68236847b12edb4770dd9e57289f7f75cc879da"
     }
   ]
 }
