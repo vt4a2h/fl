@@ -14,4 +14,50 @@
 
 namespace fl
 {
+    namespace detail
+    {
+        template <class...>
+        struct always_false : std::false_type
+        {
+        };
+    } // namespace detail
+
+    template <class... Args>
+    struct Coproduct
+    {
+        static_assert(detail::always_false<Args...>::value, "Coproduct is not implemented for this number of types");
+    };
+
+    template <class T>
+    struct Coproduct<T>
+    {
+        using value_t = std::remove_cvref_t<T>;
+        T value;
+    };
+
+    template <class T0, class T1>
+    struct Coproduct<T0, T1>
+    {
+        using value_t_0 = std::remove_cvref_t<T0>;
+        using value_t_1 = std::remove_cvref_t<T1>;
+
+        union Data
+        {
+            value_t_0 v0;
+            value_t_1 v1;
+
+            ~Data()
+            {
+                /* clang and gcc can implicitly remove a destructor in case when one of the types is non-trivial */
+            }
+        } value;
+
+        bool is_v0;
+    };
+
+    template <class>
+    constexpr std::size_t arity = std::numeric_limits<std::size_t>::min();
+
+    template <class... Args>
+    constexpr std::size_t arity<Coproduct<Args...>> = sizeof...(Args);
 } // namespace fl
