@@ -27,7 +27,7 @@ target_sources(tests PRIVATE
     writer_default_types.hpp
     writer_utility_types.hpp
     test_writer_move_copy.cpp
-#    test_utils_ap_optional.cpp
+    #    test_utils_ap_optional.cpp
     test_match.cpp
     expected/test_expected_experimental.cpp
     expected/test_expected_ap.cpp
@@ -48,13 +48,13 @@ target_link_libraries(tests PRIVATE
     fl
 )
 
-if(MSVC)
+if (MSVC)
     target_compile_options(tests
         PRIVATE
-            "/wd4996;" # external warning in fmt
-            "/wd4244;" # convert int/double in tests
+        "/wd4996;" # external warning in fmt
+        "/wd4244;" # convert int/double in tests
     )
-endif()
+endif ()
 
 include(Catch)
 catch_discover_tests(tests)
