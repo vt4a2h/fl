@@ -60,4 +60,26 @@ namespace fl
 
     template <class... Args>
     constexpr std::size_t arity<Coproduct<Args...>> = sizeof...(Args);
+
+    template <class T, class P>
+    constexpr bool holds_value_of_type(const P&)
+    {
+        return false;
+    }
+
+    template <class T, class P>
+        requires (arity<std::remove_cvref_t<P>> == 1)
+    constexpr bool holds_value_of_type(const P&)
+    {
+        return std::is_same_v<typename std::remove_cv_t<P>::value_t, T>;
+    }
+
+    template <class T, class P>
+        requires (arity<std::remove_cvref_t<P>> == 2)
+    constexpr bool holds_value_of_type(const P& p)
+    {
+        return p.is_v0
+                   ? std::is_same_v<typename std::remove_cv_t<P>::value_t_0, T>
+                   : std::is_same_v<typename std::remove_cv_t<P>::value_t_1, T>;
+    }
 } // namespace fl

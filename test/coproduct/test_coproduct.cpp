@@ -37,3 +37,39 @@ TEMPLATE_TEST_CASE_SIG("Coproduct arity", "",
 {
     STATIC_REQUIRE(fl::arity<Coproduct> == Arity);
 }
+
+TEMPLATE_TEST_CASE_SIG("Coproduct holds value of T - 1", "",
+                       ((class T, bool Holds), T, Holds),
+                       (int, true),
+                       (std::string, false))
+{
+    const fl::Coproduct<int> v{.value = 42};
+
+    REQUIRE(fl::holds_value_of_type<T>(v) == Holds);
+}
+
+TEMPLATE_TEST_CASE_SIG("Coproduct holds value of T - 2", "",
+                       ((class V, class T, bool Holds), V, T, Holds),
+                       (int, int, true),
+                       (std::string, std::string, true),
+                       (int, std::string, false),
+                       (std::string, int, false)
+)
+{
+    using Coproduct = fl::Coproduct<int, std::string>;
+    auto make = []<class Val>(const Val& v)
+    {
+        if constexpr (std::is_same_v<std::remove_cvref_t<Val>, Coproduct::value_t_0>)
+        {
+            return Coproduct{.value = {.v0 = v}, .is_v0 = true};
+        }
+        else
+        {
+            return Coproduct{.value = {.v1 = v}, .is_v0 = false};
+        }
+    };
+
+    const auto v = make(V{});
+
+    REQUIRE(fl::holds_value_of_type<T>(v) == Holds);
+}
