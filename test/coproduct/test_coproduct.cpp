@@ -20,14 +20,14 @@ TEST_CASE("Create coproduct - 1")
 
 TEST_CASE("Create coproduct - 2 - 0")
 {
-    const fl::Coproduct<int, std::string> v{.value = {.v0 = 42}, .is_v0 = true};
-    REQUIRE(v.value.v0 == 42);
+    const fl::Coproduct<int, std::string> v{.value = {._0 = 42}, .is_0 = true};
+    REQUIRE(v.value._0 == 42);
 }
 
 TEST_CASE("Create coproduct - 2 - 1")
 {
-    const fl::Coproduct<int, std::string> v{.value = {.v1 = "42"}, .is_v0 = false};
-    REQUIRE(v.value.v1 == "42");
+    const fl::Coproduct<int, std::string> v{.value = {._1 = "42"}, .is_0 = false};
+    REQUIRE(v.value._1 == "42");
 }
 
 TEMPLATE_TEST_CASE_SIG("Coproduct arity", "",
@@ -48,6 +48,22 @@ TEMPLATE_TEST_CASE_SIG("Coproduct holds value of T - 1", "",
     REQUIRE(fl::holds_value_of_type<T>(v) == Holds);
 }
 
+namespace
+{
+    using Coproduct = fl::Coproduct<int, std::string>;
+    auto make = []<class Val>(const Val& v)
+    {
+        if constexpr (std::is_same_v<std::remove_cvref_t<Val>, Coproduct::value_t_0>)
+        {
+            return Coproduct{.value = {._0 = v}, .is_0 = true};
+        }
+        else
+        {
+            return Coproduct{.value = {._1 = v}, .is_0 = false};
+        }
+    };
+}
+
 TEMPLATE_TEST_CASE_SIG("Coproduct holds value of T - 2", "",
                        ((class V, class T, bool Holds), V, T, Holds),
                        (int, int, true),
@@ -56,19 +72,6 @@ TEMPLATE_TEST_CASE_SIG("Coproduct holds value of T - 2", "",
                        (std::string, int, false)
 )
 {
-    using Coproduct = fl::Coproduct<int, std::string>;
-    auto make = []<class Val>(const Val& v)
-    {
-        if constexpr (std::is_same_v<std::remove_cvref_t<Val>, Coproduct::value_t_0>)
-        {
-            return Coproduct{.value = {.v0 = v}, .is_v0 = true};
-        }
-        else
-        {
-            return Coproduct{.value = {.v1 = v}, .is_v0 = false};
-        }
-    };
-
     const auto v = make(V{});
 
     REQUIRE(fl::holds_value_of_type<T>(v) == Holds);
