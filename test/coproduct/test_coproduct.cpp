@@ -8,26 +8,15 @@
 //
 // See LICENSE file for the further details.
 //
+
 #include "catch.hpp"
 
 #include <fl/coproduct/coproduct.hpp>
 
-TEST_CASE("Create coproduct - 1")
+TEST_CASE("Create coproduct")
 {
-    const fl::Coproduct<int> v{.value = 42};
-    REQUIRE(v.value == 42);
-}
-
-TEST_CASE("Create coproduct - 2 - 0")
-{
-    const fl::Coproduct<int, std::string> v{.value = {._0 = 42}, .is_0 = true};
-    REQUIRE(v.value._0 == 42);
-}
-
-TEST_CASE("Create coproduct - 2 - 1")
-{
-    const fl::Coproduct<int, std::string> v{.value = {._1 = "42"}, .is_0 = false};
-    REQUIRE(v.value._1 == "42");
+    const fl::Coproduct<int> v{42};
+    REQUIRE(fl::get_value<int>(v) == 42);
 }
 
 TEMPLATE_TEST_CASE_SIG("Coproduct arity", "",
@@ -43,36 +32,16 @@ TEMPLATE_TEST_CASE_SIG("Coproduct holds value of T - 1", "",
                        (int, true),
                        (std::string, false))
 {
-    const fl::Coproduct<int> v{.value = 42};
+    const fl::Coproduct<int, std::string> v{42};
 
     REQUIRE(fl::holds_value_of_type<T>(v) == Holds);
 }
 
-namespace
+TEST_CASE("Coproduct match")
 {
-    using Coproduct = fl::Coproduct<int, std::string>;
-    auto make = []<class Val>(const Val& v)
-    {
-        if constexpr (std::is_same_v<std::remove_cvref_t<Val>, Coproduct::value_t_0>)
-        {
-            return Coproduct{.value = {._0 = v}, .is_0 = true};
-        }
-        else
-        {
-            return Coproduct{.value = {._1 = v}, .is_0 = false};
-        }
-    };
-}
+    constexpr int expectedValue = 42;
+    const fl::Coproduct<int, std::string> v{expectedValue};
 
-TEMPLATE_TEST_CASE_SIG("Coproduct holds value of T - 2", "",
-                       ((class V, class T, bool Holds), V, T, Holds),
-                       (int, int, true),
-                       (std::string, std::string, true),
-                       (int, std::string, false),
-                       (std::string, int, false)
-)
-{
-    const auto v = make(V{});
-
-    REQUIRE(fl::holds_value_of_type<T>(v) == Holds);
+    fl::match(v, [](int v) { REQUIRE(v == expectedValue); },
+              [](const std::string&) { FAIL("Matched wrong value"); });
 }
