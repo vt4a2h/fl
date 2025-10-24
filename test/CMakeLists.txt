@@ -32,6 +32,7 @@ target_sources(tests PRIVATE
     expected/test_expected_experimental.cpp
     expected/test_expected_ap.cpp
     coproduct/test_coproduct.cpp
+    experimental/test_experimental_expected.cpp
 )
 
 #if (HAS_EXPECTED_RESULT)
